@@ -132,3 +132,45 @@ class Analysis(Base):
     )
 
     article: Mapped[Article] = relationship(back_populates="analysis")
+
+
+class AnalysisBatch(Base):
+    """A request to analyze several articles at once; a background job works through its
+    items. Its status is derived from the items (see services/batches)."""
+
+    __tablename__ = "analysis_batches"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    items: Mapped[list["AnalysisBatchItem"]] = relationship(
+        back_populates="batch", order_by="AnalysisBatchItem.position", cascade="all, delete-orphan"
+    )
+
+
+class AnalysisBatchItem(Base):
+    """One article in a batch and how far it got."""
+
+    __tablename__ = "analysis_batch_items"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'running', 'done', 'skipped', 'failed')", name="status"
+        ),
+    )
+
+    batch_id: Mapped[int] = mapped_column(
+        ForeignKey("analysis_batches.id", ondelete="CASCADE"), primary_key=True
+    )
+    article_id: Mapped[int] = mapped_column(
+        ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    position: Mapped[int] = mapped_column(Integer)  # order the client asked for
+    status: Mapped[str] = mapped_column(String(16))
+    error_code: Mapped[str | None] = mapped_column(String(64))  # set when status == "failed"
+    # Bumped on every status change; items stuck too long count as interrupted.
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    batch: Mapped[AnalysisBatch] = relationship(back_populates="items")
+    article: Mapped[Article] = relationship()
