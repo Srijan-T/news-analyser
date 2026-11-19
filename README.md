@@ -56,7 +56,7 @@ Production environment variables (set in Railway, never committed):
 | Variable | Purpose |
 |---|---|
 | `NEWS_PROVIDER=gnews`, `GNEWS_API_KEY` | Live news |
-| `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD` | Password-protects the app so strangers can't spend the API quotas. `/api/health` stays open for Railway's health check. |
+| `APP_PASSWORD`, `SESSION_SECRET` | Puts the app behind a sign-in page (one shared password) so strangers can't spend the API quotas. `SESSION_SECRET` signs the session cookie. `/api/health` stays open for Railway's health check. |
 | `PORT` | Injected by Railway; defaults to 8000 |
 
 ## API conventions
