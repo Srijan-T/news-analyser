@@ -1,0 +1,17 @@
+# Secrets must never be baked into the image; Railway injects env vars at runtime.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Rebuilt inside the image
+**/.venv
+**/node_modules
+frontend/dist
+
+# Caches and local tooling
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+.git
+.github
+.claude

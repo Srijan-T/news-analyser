@@ -38,6 +38,27 @@ I first evaluated **FreeNewsAPI.io**, which advertises real-time articles and fu
 make check   # lint + typecheck + tests
 ```
 
+CI (GitHub Actions) runs the same checks on every pull request, plus a production Docker build. It uses the fake news provider, so it needs no secrets and spends no API quota.
+
+## Deployment
+
+One Docker image (see [`Dockerfile`](Dockerfile)) runs the whole app. A Node stage builds the React frontend, and FastAPI serves it alongside `/api` on a single origin, so there's no CORS. The app is deployed on Railway, which builds the root `Dockerfile` on every push to `main`.
+
+Run the production image locally:
+
+```bash
+docker build -t news-analyser .
+docker run -p 8000:8000 -e NEWS_PROVIDER=fake news-analyser   # http://localhost:8000
+```
+
+Production environment variables (set in Railway, never committed):
+
+| Variable | Purpose |
+|---|---|
+| `NEWS_PROVIDER=gnews`, `GNEWS_API_KEY` | Live news |
+| `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD` | Password-protects the app so strangers can't spend the API quotas. `/api/health` stays open for Railway's health check. |
+| `PORT` | Injected by Railway; defaults to 8000 |
+
 ## API conventions
 
 Every error response uses one shape:
