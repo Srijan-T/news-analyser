@@ -2,7 +2,18 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    func,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -52,6 +63,8 @@ class Article(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    analysis: Mapped["Analysis | None"] = relationship(back_populates="article", uselist=False)
+
 
 class SearchResult(Base):
     """Which articles a search returned, in the provider's order."""
@@ -68,3 +81,37 @@ class SearchResult(Base):
 
     search: Mapped[Search] = relationship(back_populates="results")
     article: Mapped[Article] = relationship()
+
+
+class Analysis(Base):
+    """The AI summary and sentiment for one article (at most one per article)."""
+
+    __tablename__ = "analyses"
+    __table_args__ = (
+        # Enforced by Postgres too, so no bug can store an invalid analysis.
+        CheckConstraint("sentiment IN ('positive', 'neutral', 'negative')", name="sentiment"),
+        CheckConstraint("score >= -1 AND score <= 1", name="score_range"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    article_id: Mapped[int] = mapped_column(
+        ForeignKey("articles.id", ondelete="CASCADE"), unique=True
+    )
+    tldr: Mapped[str] = mapped_column(Text)
+    key_points: Mapped[list[str]] = mapped_column(JSONB)
+    sentiment: Mapped[str] = mapped_column(String(16), index=True)  # positive|neutral|negative
+    score: Mapped[float] = mapped_column(Float)  # -1 (very negative) .. 1 (very positive)
+    rationale: Mapped[str] = mapped_column(Text)
+    evidence: Mapped[list[str]] = mapped_column(JSONB)  # short quotes from the source text
+    # Traceability: what the model saw, which model and prompt produced it, and its cost.
+    text_source: Mapped[str] = mapped_column(String(16))  # "snippet" | "full"
+    model: Mapped[str] = mapped_column(String(64))
+    prompt_version: Mapped[str] = mapped_column(String(32))
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    article: Mapped[Article] = relationship(back_populates="analysis")
