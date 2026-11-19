@@ -62,7 +62,7 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - `Base` (in `db.py`) has a naming convention so constraints get predictable names in migrations.
 - Models live in `app/models.py`, which is imported by `migrations/env.py` so autogenerate sees every table. Workflow: edit models → `make migration name="..."` → **read the generated file** → `make migrate`.
 - The folder is `migrations/`, not `alembic/`, so it can't shadow the `alembic` package.
-- Tests: `tests/conftest.py` points `DATABASE_URL` at `news_analyser_test` (or `TEST_DATABASE_URL` in CI) and runs `alembic upgrade head` once per test run.
+- Tests: `tests/conftest.py` points `DATABASE_URL` at `news_analyser_test` (or `TEST_DATABASE_URL` in CI) and runs `alembic upgrade head` once per test run. Most tests use the rolled-back `db` fixture. `tests/test_search_concurrency.py` commits for real and truncates its tables afterwards, so the test database must be disposable.
 - Production migrations run in the Docker `CMD` (`alembic upgrade head && exec uvicorn ...`), not as a Railway pre-deploy command. Pre-deploy containers couldn't reach `postgres.railway.internal`.
 - `/api/health` runs `SELECT 1` and returns 503 `database_unavailable` if Postgres is unreachable. Railway's health check uses it.
 
