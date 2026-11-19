@@ -114,3 +114,21 @@ def stats(db: Session, filters: ArticleFilters) -> Stats:
         average_score=score_sum / total if total else None,
         sources=list(sources),
     )
+
+
+SIMILARITY_THRESHOLD = 0.3  # pg_trgm word_similarity: 0 unrelated .. 1 identical
+
+
+def similar_articles(db: Session, query: str, limit: int) -> list[Article]:
+    """Stored articles whose titles fuzzily match `query` (typos included), best first.
+    Pure database: never calls the news provider, so it costs no quota."""
+    score = func.word_similarity(query, Article.title)
+    return list(
+        db.scalars(
+            select(Article)
+            .where(score >= SIMILARITY_THRESHOLD)
+            .order_by(score.desc(), Article.published_at.desc())
+            .limit(limit)
+            .options(selectinload(Article.analysis))
+        )
+    )

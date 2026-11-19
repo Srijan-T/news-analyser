@@ -107,3 +107,7 @@ class StatsOut(BaseModel):
     by_sentiment: SentimentCounts
     average_score: float | None = Field(description="Mean score; null when nothing matches")
     sources: list[str] = Field(description="Every source with an analysis (for filter menus)")
+
+
+class SimilarArticles(BaseModel):
+    items: list[ArticleOut]

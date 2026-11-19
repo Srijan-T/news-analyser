@@ -5,7 +5,14 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.schemas import AnalysisOut, ArticleOut, ArticlePage, SentimentCounts, StatsOut
+from app.schemas import (
+    AnalysisOut,
+    ArticleOut,
+    ArticlePage,
+    SentimentCounts,
+    SimilarArticles,
+    StatsOut,
+)
 from app.services import analyses, history
 from app.services.ai import get_analyzer
 from app.services.ai.base import Analyzer, Sentiment
@@ -64,6 +71,21 @@ def stats(db: DbSession, filters: Filters) -> StatsOut:
         average_score=result.average_score,
         sources=result.sources,
     )
+
+
+# Declared before /articles/{article_id} so "similar" isn't parsed as an article id.
+@router.get(
+    "/articles/similar",
+    response_model=SimilarArticles,
+    summary="Stored articles whose titles fuzzily match a query (no news-API call)",
+)
+def similar_articles(
+    db: DbSession,
+    q: Annotated[str, Query(min_length=1, max_length=200)],
+    limit: Annotated[int, Query(ge=1, le=20)] = 5,
+) -> SimilarArticles:
+    items = history.similar_articles(db, q.strip(), limit)
+    return SimilarArticles(items=[ArticleOut.model_validate(a) for a in items])
 
 
 @router.get(

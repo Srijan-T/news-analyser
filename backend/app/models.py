@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -53,6 +54,15 @@ class Article(Base):
     """A news article, stored once however many searches return it (unique by URL)."""
 
     __tablename__ = "articles"
+    __table_args__ = (
+        # Trigram index (pg_trgm) for fuzzy title matching ("From your earlier searches").
+        Index(
+            "ix_articles_title_trgm",
+            "title",
+            postgresql_using="gin",
+            postgresql_ops={"title": "gin_trgm_ops"},
+        ),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     url: Mapped[str] = mapped_column(Text, unique=True)
