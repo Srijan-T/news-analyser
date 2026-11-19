@@ -1,9 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client.ts'
 
+// Re-check periodically so the badge recovers after a backend restart (and notices an outage).
+const HEALTH_POLL_MS = 30_000
+
 /** Small badge showing whether the backend is reachable. */
 export function ApiStatus() {
-  const { isPending, isError } = useQuery({ queryKey: ['health'], queryFn: api.health })
+  const { isPending, isError } = useQuery({
+    queryKey: ['health'],
+    queryFn: api.health,
+    refetchInterval: HEALTH_POLL_MS,
+  })
 
   const [label, dot] = isPending
     ? ['Connecting…', 'bg-slate-400']
