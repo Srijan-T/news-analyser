@@ -97,9 +97,17 @@ export function SearchPage() {
   const error = create.error ?? (searchId !== null ? stored.error : null)
 
   return (
-    // Desktop-first: three columns from 1024px; below that, one column (results, then the
-    // selected article, then history) so phones and tablets never scroll sideways.
-    <div className="grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)_20rem] xl:grid-cols-[13rem_minmax(0,1fr)_24rem]">
+    // Desktop-first: from 1024px, recent searches and results, plus the article column only
+    // while an article is open (otherwise the page is centred, with no empty column). Below
+    // that, one column (results, then the selected article, then history) so phones and
+    // tablets never scroll sideways.
+    <div
+      className={
+        articleId !== null
+          ? 'grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)_20rem] xl:grid-cols-[13rem_minmax(0,1fr)_24rem]'
+          : 'mx-auto grid max-w-6xl gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] xl:grid-cols-[13rem_minmax(0,1fr)]'
+      }
+    >
       <aside className="order-last lg:order-none">
         <RecentSearches currentId={searchId} />
       </aside>
@@ -108,7 +116,8 @@ export function SearchPage() {
         <div>
           <h1 className="text-2xl font-semibold">Search the news</h1>
           <p className="mt-1 text-soft">
-            Find recent articles on a topic, then get an AI summary and sentiment for any of them.
+            Find recent articles on a topic, then select a headline for its AI summary and
+            sentiment.
           </p>
         </div>
 
@@ -179,15 +188,11 @@ export function SearchPage() {
         )}
       </section>
 
-      <aside className="lg:sticky lg:top-6 lg:self-start">
-        {articleId !== null ? (
+      {articleId !== null && (
+        <aside className="lg:sticky lg:top-6 lg:self-start">
           <ArticleDetail key={articleId} articleId={articleId} searchId={searchId} />
-        ) : search && search.items.length > 0 ? (
-          <p className="rounded-lg border border-dashed border-line-strong p-5 text-sm text-muted">
-            Select an article's headline to see its AI summary and sentiment.
-          </p>
-        ) : null}
-      </aside>
+        </aside>
+      )}
     </div>
   )
 }
