@@ -22,13 +22,14 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 
 # Dependencies first (cached layer), then the app code, which changes more often.
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=backend/uv.lock,target=uv.lock \
+# No `--mount=type=cache` here: Railway's builder rejects cache mounts without a
+# Railway-specific id, and the dependency layer above already gives most of the speed-up.
+ENV UV_NO_CACHE=1
+RUN --mount=type=bind,source=backend/uv.lock,target=uv.lock \
     --mount=type=bind,source=backend/pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-dev --no-install-project
 COPY backend/ ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+RUN uv sync --locked --no-dev
 
 COPY --from=frontend /frontend/dist ./static
 
