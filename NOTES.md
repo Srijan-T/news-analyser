@@ -81,6 +81,12 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - `stats` groups by sentiment for the counts and averages. `sources` deliberately ignores the filters, so the dropdown keeps all its options.
 - Frontend: the filters live in the URL (`?sentiment=&source=&search=&within=&sort=&page=&article=`). `historyQuery()` in `client.ts` turns them into the shared query string, and `within` becomes `published_from` at request time.
 
+## Theming (`src/index.css`, `src/lib/theme.ts`)
+
+- Use **semantic colour classes**, not raw palette ones: `bg-canvas` (page), `bg-surface` (cards, inputs), `bg-subtle`/`bg-subtle-strong`, `border-line`/`border-line-strong`, `text-fg`/`text-soft`/`text-muted`/`text-faint`, `bg-accent` + `text-accent-fg` (primary buttons), `*-danger-*` (errors). Each is a CSS variable with a light value in `:root` and a dark value in `.dark`.
+- Use raw colours (with `dark:` variants) only when the colour carries meaning, as `SentimentBadge` does.
+- The `ThemeToggle` stores `'light' | 'dark'` in `localStorage['theme']`; no stored value means System. The inline script in `index.html` repeats that logic before first paint, so keep the two in sync.
+
 ## Adding an endpoint
 
 1. Create or extend `backend/app/routers/<resource>.py` with a pydantic response model.

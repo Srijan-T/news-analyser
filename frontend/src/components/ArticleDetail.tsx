@@ -34,17 +34,17 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
   })
 
   if (article.isPending) {
-    return <div className="h-64 animate-pulse rounded-lg bg-slate-100" aria-label="Loading article" />
+    return <div className="h-64 animate-pulse rounded-lg bg-subtle" aria-label="Loading article" />
   }
   if (article.isError) {
-    return <p className="text-sm text-slate-500">Couldn't load this article.</p>
+    return <p className="text-sm text-muted">Couldn't load this article.</p>
   }
 
   const { analysis } = article.data
   return (
-    <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+    <div className="space-y-4 rounded-lg border border-line bg-surface p-5">
       <div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           {article.data.source_name} · {timeAgo(article.data.published_at)}
         </p>
         <h2 className="mt-1 leading-snug font-semibold">{article.data.title}</h2>
@@ -52,7 +52,7 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
           href={article.data.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 inline-block text-xs text-slate-500 hover:text-slate-900 hover:underline"
+          className="mt-1 inline-block text-xs text-muted hover:text-fg hover:underline"
         >
           Read the original ↗
         </a>
@@ -66,16 +66,16 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
             type="button"
             onClick={() => analyze.mutate()}
             disabled={analyze.isPending}
-            className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg disabled:opacity-60"
           >
             {analyze.isPending ? 'Analyzing…' : 'Summarize & analyze sentiment'}
           </button>
           {analyze.isError && (
-            <p role="alert" className="text-sm text-red-700">
+            <p role="alert" className="text-sm text-danger-fg">
               {analysisError(analyze.error)}
             </p>
           )}
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted">
             Uses AI on the headline, description and opening lines.
           </p>
         </div>
@@ -91,7 +91,7 @@ function AnalysisView({ analysis }: { analysis: Analysis }) {
         <SentimentBadge sentiment={analysis.sentiment} score={analysis.score} />
         {analysis.text_source === 'snippet' && (
           <span
-            className="text-xs text-slate-500"
+            className="text-xs text-muted"
             title="The free news plan only provides the article's opening, not the full text"
           >
             Based on the article's opening
@@ -102,7 +102,7 @@ function AnalysisView({ analysis }: { analysis: Analysis }) {
       <p className="font-medium">{analysis.tldr}</p>
 
       {analysis.key_points.length > 0 && (
-        <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+        <ul className="list-disc space-y-1 pl-5 text-sm text-soft">
           {analysis.key_points.map((point) => (
             <li key={point}>{point}</li>
           ))}
@@ -110,18 +110,18 @@ function AnalysisView({ analysis }: { analysis: Analysis }) {
       )}
 
       <div className="space-y-2 text-sm">
-        <p className="text-slate-600">
-          <span className="font-medium text-slate-900">Why this sentiment: </span>
+        <p className="text-soft">
+          <span className="font-medium text-fg">Why this sentiment: </span>
           {analysis.rationale}
         </p>
         {analysis.evidence.map((quote) => (
-          <blockquote key={quote} className="border-l-2 border-slate-300 pl-3 text-slate-600 italic">
+          <blockquote key={quote} className="border-l-2 border-line-strong pl-3 text-soft italic">
             “{quote}”
           </blockquote>
         ))}
       </div>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-faint">
         {analysis.model} · prompt {analysis.prompt_version} · {timeAgo(analysis.created_at)}
       </p>
     </div>

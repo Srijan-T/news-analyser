@@ -20,15 +20,15 @@ export function RecentSearches({ currentId }: { currentId: number | null }) {
 
   return (
     <nav aria-label="Recent searches" className="space-y-2">
-      <h2 className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+      <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">
         Recent searches
       </h2>
       {recent.isPending ? (
-        <p className="text-sm text-slate-400">Loading…</p>
+        <p className="text-sm text-faint">Loading…</p>
       ) : recent.isError ? (
-        <p className="text-sm text-slate-400">Couldn't load history.</p>
+        <p className="text-sm text-faint">Couldn't load history.</p>
       ) : recent.data.items.length === 0 ? (
-        <p className="text-sm text-slate-400">No searches yet.</p>
+        <p className="text-sm text-faint">No searches yet.</p>
       ) : (
         <ul className="space-y-1">
           {recent.data.items.map((search) => (
@@ -37,11 +37,11 @@ export function RecentSearches({ currentId }: { currentId: number | null }) {
                 to={`/?search=${search.id}`}
                 aria-current={search.id === currentId ? 'page' : undefined}
                 className={`block rounded-md px-2 py-1.5 ${
-                  search.id === currentId ? 'bg-slate-200' : 'hover:bg-slate-100'
+                  search.id === currentId ? 'bg-subtle-strong' : 'hover:bg-subtle'
                 }`}
               >
                 <span className="block truncate text-sm font-medium">{search.query}</span>
-                <span className="block text-xs text-slate-500">
+                <span className="block text-xs text-muted">
                   {describe(search)} · {timeAgo(search.created_at)}
                 </span>
               </Link>

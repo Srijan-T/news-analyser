@@ -80,7 +80,7 @@ export function SearchPage() {
       <section className="min-w-0 space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">Search the news</h1>
-          <p className="mt-1 text-slate-600">
+          <p className="mt-1 text-soft">
             Find recent articles on a topic, then get an AI summary and sentiment for any of them.
           </p>
         </div>
@@ -102,28 +102,28 @@ export function SearchPage() {
             ))}
           </div>
         ) : error ? (
-          <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm">
-            <p className="text-red-800">{errorMessage(error)}</p>
+          <div role="alert" className="rounded-md border border-danger-line bg-danger-bg p-4 text-sm">
+            <p className="text-danger-fg">{errorMessage(error)}</p>
             {create.error && create.variables && (
               <button
                 onClick={() => create.mutate(create.variables)}
-                className="mt-2 font-medium text-red-900 underline"
+                className="mt-2 font-medium text-danger-fg underline"
               >
                 Try again
               </button>
             )}
           </div>
         ) : !search ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             Enter a topic above, or reopen a recent search.
           </p>
         ) : search.items.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             No articles found for “{search.query}”. Try broader terms or a longer time window.
           </p>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               {search.items.length} articles · fetched {timeAgo(search.created_at)} · free news
               plan, so articles can be up to ~12 hours old
             </p>
@@ -145,7 +145,7 @@ export function SearchPage() {
         {articleId !== null ? (
           <ArticleDetail key={articleId} articleId={articleId} searchId={searchId} />
         ) : search && search.items.length > 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 p-5 text-sm text-slate-500">
+          <p className="rounded-lg border border-dashed border-line-strong p-5 text-sm text-muted">
             Select an article's headline to see its AI summary and sentiment.
           </p>
         ) : null}

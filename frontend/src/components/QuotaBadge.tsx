@@ -8,7 +8,7 @@ export function QuotaBadge() {
   if (!quota.data || quota.data.limit === null || quota.data.remaining === null) return null
   const { remaining, limit } = quota.data
   return (
-    <p className={`text-xs ${remaining === 0 ? 'text-red-700' : 'text-slate-500'}`}>
+    <p className={`text-xs ${remaining === 0 ? 'text-danger-fg' : 'text-muted'}`}>
       {remaining === 0
         ? 'No new searches left today (resets 00:00 UTC). Recent searches still work.'
         : `${remaining} of ${limit} new searches left today`}

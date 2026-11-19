@@ -41,7 +41,7 @@ function readFilters(sp: URLSearchParams): HistoryFilters {
   }
 }
 
-const selectClass = 'rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm'
+const selectClass = 'rounded-md border border-line-strong bg-surface px-2 py-1.5 text-sm'
 
 export function HistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -84,7 +84,7 @@ export function HistoryPage() {
       <section className="min-w-0 space-y-5">
         <div>
           <h1 className="text-2xl font-semibold">Analysis history</h1>
-          <p className="mt-1 text-slate-600">
+          <p className="mt-1 text-soft">
             Every article you've analyzed, with its sentiment. Filter to see how coverage leans.
           </p>
         </div>
@@ -160,7 +160,7 @@ export function HistoryPage() {
             <button
               type="button"
               onClick={() => setSearchParams({})}
-              className="px-2 text-sm text-slate-500 underline hover:text-slate-900"
+              className="px-2 text-sm text-muted underline hover:text-fg"
             >
               Clear filters
             </button>
@@ -176,11 +176,11 @@ export function HistoryPage() {
             ))}
           </div>
         ) : list.isError ? (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="text-sm text-danger-fg">
             Couldn't load your history. Refresh to try again.
           </p>
         ) : list.data.items.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             {filtered
               ? 'No analyzed articles match these filters.'
               : 'Nothing analyzed yet. Search for a topic and analyze an article to see it here.'}
@@ -204,18 +204,18 @@ export function HistoryPage() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => update('page', page > 2 ? String(page - 1) : null)}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40"
+                  className="rounded-md border border-line-strong bg-surface px-3 py-1.5 disabled:opacity-40"
                 >
                   ← Previous
                 </button>
-                <span className="text-slate-500">
+                <span className="text-muted">
                   Page {page} of {pages}
                 </span>
                 <button
                   type="button"
                   disabled={page >= pages}
                   onClick={() => update('page', String(page + 1))}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40"
+                  className="rounded-md border border-line-strong bg-surface px-3 py-1.5 disabled:opacity-40"
                 >
                   Next →
                 </button>
@@ -229,7 +229,7 @@ export function HistoryPage() {
         {articleId !== null ? (
           <ArticleDetail key={articleId} articleId={articleId} searchId={null} />
         ) : list.data && list.data.items.length > 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 p-5 text-sm text-slate-500">
+          <p className="rounded-lg border border-dashed border-line-strong p-5 text-sm text-muted">
             Select a headline to see its full analysis.
           </p>
         ) : null}

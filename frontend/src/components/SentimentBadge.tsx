@@ -1,9 +1,13 @@
 import type { Sentiment } from '../api/types.ts'
 
+// Meaningful colours (green/grey/red) stay explicit, with tuned dark-mode variants:
+// translucent tinted backgrounds and lighter text keep contrast on dark surfaces.
 const STYLES: Record<Sentiment, string> = {
-  positive: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  neutral: 'bg-slate-100 text-slate-700 ring-slate-200',
-  negative: 'bg-rose-50 text-rose-800 ring-rose-200',
+  positive:
+    'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30',
+  neutral: 'bg-subtle text-soft ring-line',
+  negative:
+    'bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30',
 }
 
 const LABELS: Record<Sentiment, string> = {
