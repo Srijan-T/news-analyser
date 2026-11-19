@@ -12,6 +12,7 @@ import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from difflib import SequenceMatcher
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -152,8 +153,9 @@ class _ProviderCalls:
         finally:
             self._last_call = time.monotonic()
         # Providers occasionally repeat an article, which would break the
-        # (search_id, article_id) key, so keep the first of each.
-        return _dedupe_by_url(results)
+        # (search_id, article_id) key, so keep the first of each. The same story can also
+        # come back under a second URL (e.g. after a headline edit): drop those too.
+        return drop_near_duplicates(_dedupe_by_url(results))
 
 
 def _fallbacks(
@@ -184,6 +186,39 @@ def _dedupe_by_url(articles: list[NormalizedArticle]) -> list[NormalizedArticle]
     for article in articles:
         unique.setdefault(article.url, article)
     return list(unique.values())
+
+
+# Titles at least this similar (difflib ratio, after normalizing) may be the same story, but
+# only with corroborating evidence: one outlet's "Tesla stock jumps/drops 5% on delivery
+# numbers" scores 0.92, so a shared source isn't enough.
+SIMILAR_TITLE = 0.9
+
+
+def _normalized_title(title: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", title.lower()))
+
+
+def _same_story(a: NormalizedArticle, b: NormalizedArticle) -> bool:
+    """Identical headlines (wire stories republished verbatim), or near-identical ones that
+    also share the description or image (a re-published or edited article)."""
+    ta, tb = _normalized_title(a.title), _normalized_title(b.title)
+    if ta == tb:
+        return True
+    if SequenceMatcher(None, ta, tb).ratio() < SIMILAR_TITLE:
+        return False
+    return (a.description is not None and a.description == b.description) or (
+        a.image_url is not None and a.image_url == b.image_url
+    )
+
+
+def drop_near_duplicates(articles: list[NormalizedArticle]) -> list[NormalizedArticle]:
+    """Keep the first copy of each story, in the provider's order (at most 10 articles, so
+    comparing every pair is cheap)."""
+    kept: list[NormalizedArticle] = []
+    for article in articles:
+        if not any(_same_story(article, k) for k in kept):
+            kept.append(article)
+    return kept
 
 
 def _fresh_search(db: Session, key: str, now: datetime) -> Search | None:
