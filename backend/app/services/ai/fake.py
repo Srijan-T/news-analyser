@@ -48,6 +48,14 @@ NEGATIVE = {
 }
 
 
+def _complete_sentences(text: str) -> list[str]:
+    """Whole sentences only: split on line breaks and sentence ends, then keep pieces that
+    end with . ! or ?. That drops the free GNews snippet's cut-off tail ("...in share...")
+    and bylines like "By Jane Doe · Nov 18, 2026"."""
+    pieces = re.split(r"(?<=[.!?])\s+|\n+", text)
+    return [p.strip() for p in pieces if p.strip().endswith((".", "!", "?"))]
+
+
 class FakeAnalyzer:
     model = "fake"
 
@@ -57,11 +65,13 @@ class FakeAnalyzer:
         score = max(-1.0, min(1.0, balance / 3))
         sentiment = "positive" if score > 0.1 else "negative" if score < -0.1 else "neutral"
 
-        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", article.body) if s.strip()]
+        sentences = _complete_sentences(
+            " \n".join(filter(None, [article.description, article.snippet]))
+        )
         evidence_source = article.description or article.title
         draft = AnalysisDraft(
             tldr=sentences[0] if sentences else article.title,
-            key_points=sentences[1:4] or [article.title],
+            key_points=sentences[1:4],  # may be empty; the UI hides an empty list
             sentiment=sentiment,
             score=round(score, 2),
             rationale=f"Keyword tone: {balance:+d} (fake analyzer, for development).",

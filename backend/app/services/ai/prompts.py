@@ -3,12 +3,14 @@ every analysis, so results can be traced to the prompt that produced them."""
 
 from app.services.ai.base import ArticleText
 
-PROMPT_VERSION = "2026-11-19.1"
+PROMPT_VERSION = "2026-11-20.1"
 
 SYSTEM_PROMPT = """You analyze a news article for a busy reader tracking a topic.
 
 You may only see the headline, a short description and the first lines of the article.
-Use only that text; never add facts from elsewhere.
+Use only that text; never add facts from elsewhere. The opening text is often cut off
+mid-sentence (marked "cut off"): never copy a cut-off sentence; write complete points in
+your own words.
 
 Return:
 - tldr: one plain sentence (max 30 words) saying what happened.
@@ -26,5 +28,8 @@ def build_input(article: ArticleText) -> str:
     if article.description:
         lines.append(f"Description: {article.description}")
     if article.snippet:
-        lines.append(f"Opening text: {article.snippet}")
+        # Free news plans truncate the text; say so, so the model doesn't echo the fragment.
+        cut_off = article.snippet.rstrip().endswith(("…", "..."))
+        label = "Opening text (cut off)" if cut_off else "Opening text"
+        lines.append(f"{label}: {article.snippet}")
     return "\n".join(lines)
