@@ -27,6 +27,9 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
       )
       // The results list shows sentiment badges, so refresh it too.
       if (searchId !== null) queryClient.invalidateQueries({ queryKey: ['search', searchId] })
+      // History and its stats now include this article.
+      queryClient.invalidateQueries({ queryKey: ['history'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
     },
   })
 

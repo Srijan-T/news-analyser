@@ -7,11 +7,14 @@ type Props = {
   article: Article
   selected?: boolean
   onSelect?: () => void
+  /** Show the AI TL;DR (when analyzed) instead of the provider's description. */
+  showSummary?: boolean
 }
 
-export function ArticleCard({ article, selected = false, onSelect }: Props) {
+export function ArticleCard({ article, selected = false, onSelect, showSummary = false }: Props) {
   const [imageFailed, setImageFailed] = useState(false)
   const showImage = article.image_url && !imageFailed
+  const blurb = showSummary && article.analysis ? article.analysis.tldr : article.description
 
   return (
     <article
@@ -56,9 +59,7 @@ export function ArticleCard({ article, selected = false, onSelect }: Props) {
             {article.title}
           </button>
         </h2>
-        {article.description && (
-          <p className="mt-1 line-clamp-2 text-sm text-slate-600">{article.description}</p>
-        )}
+        {blurb && <p className="mt-1 line-clamp-2 text-sm text-slate-600">{blurb}</p>}
       </div>
     </article>
   )
