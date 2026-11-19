@@ -119,16 +119,19 @@ export function SearchPage() {
             correctedNoticeId={
               search?.original_query && search.match_mode === 'all' ? SEARCH_NOTICE_ID : undefined
             }
+            // Right under the box, so the user sees why its text differs from what they typed.
+            notice={
+              search &&
+              !create.isPending && (
+                <SearchNotice
+                  search={search}
+                  onSearchExactly={(typed) =>
+                    create.mutate({ q: typed, sort: search.sort, period: search.period, exact: true })
+                  }
+                />
+              )
+            }
           />
-          {/* Right under the box: the user sees why its text differs from what they typed. */}
-          {search && !create.isPending && (
-            <SearchNotice
-              search={search}
-              onSearchExactly={(typed) =>
-                create.mutate({ q: typed, sort: search.sort, period: search.period, exact: true })
-              }
-            />
-          )}
           <QuotaBadge />
         </div>
 
