@@ -119,16 +119,27 @@ def stats(db: Session, filters: ArticleFilters) -> Stats:
 SIMILARITY_THRESHOLD = 0.3  # pg_trgm word_similarity: 0 unrelated .. 1 identical
 
 
+def similar_articles_statement(query: str, limit: int) -> Select[Article]:
+    """Titles fuzzily matching `query`, best first. Filters with pg_trgm's `%>` operator
+    (word similarity above pg_trgm.word_similarity_threshold), which the GIN trigram index
+    on articles.title can serve. Comparing word_similarity() to a number can't use the
+    index and would scan every article."""
+    return (
+        select(Article)
+        .where(Article.title.op("%>")(query))
+        .order_by(func.word_similarity(query, Article.title).desc(), Article.published_at.desc())
+        .limit(limit)
+        .options(selectinload(Article.analysis))
+    )
+
+
 def similar_articles(db: Session, query: str, limit: int) -> list[Article]:
     """Stored articles whose titles fuzzily match `query` (typos included), best first.
     Pure database: never calls the news provider, so it costs no quota."""
-    score = func.word_similarity(query, Article.title)
-    return list(
-        db.scalars(
-            select(Article)
-            .where(score >= SIMILARITY_THRESHOLD)
-            .order_by(score.desc(), Article.published_at.desc())
-            .limit(limit)
-            .options(selectinload(Article.analysis))
+    # The operator's cut-off is a setting, not an argument: set it for this transaction only.
+    db.execute(
+        select(
+            func.set_config("pg_trgm.word_similarity_threshold", str(SIMILARITY_THRESHOLD), True)
         )
     )
+    return list(db.scalars(similar_articles_statement(query, limit)))

@@ -76,3 +76,22 @@ def test_limit_and_validation(client: TestClient) -> None:
 def test_article_detail_route_still_works(client: TestClient) -> None:
     # "/articles/similar" must not be swallowed by "/articles/{article_id}" (or vice versa).
     assert client.get("/api/articles/999999").json()["error"]["code"] == "article_not_found"
+
+
+def test_similarity_filter_can_use_the_trigram_index(db: Session) -> None:
+    """A function compared to a number can't use the GIN index; pg_trgm's operator can. With
+    sequential scans disabled, the planner must find an index path for our query."""
+    from sqlalchemy import text
+    from sqlalchemy.dialects import postgresql
+
+    from app.services.history import similar_articles_statement
+
+    sql = similar_articles_statement("enviromental improvemenets", 5).compile(
+        dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+    )
+    db.execute(text("SET LOCAL enable_seqscan = off"))
+    # Rendering for the psycopg driver escapes "%" as "%%"; undo it for this raw EXPLAIN.
+    raw = str(sql).replace("%%", "%")
+    plan = "\n".join(row[0] for row in db.execute(text(f"EXPLAIN {raw}")))
+
+    assert "ix_articles_title_trgm" in plan
