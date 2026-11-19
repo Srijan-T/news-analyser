@@ -57,6 +57,7 @@ frontend/
 - Models live in `app/models.py`, which is imported by `migrations/env.py` so autogenerate sees every table. Workflow: edit models → `make migration name="..."` → **read the generated file** → `make migrate`.
 - The folder is `migrations/`, not `alembic/`, so it can't shadow the `alembic` package.
 - Tests: `tests/conftest.py` points `DATABASE_URL` at `news_analyser_test` (or `TEST_DATABASE_URL` in CI) and runs `alembic upgrade head` once per test run.
+- Production migrations run in the Docker `CMD` (`alembic upgrade head && exec uvicorn ...`), not as a Railway pre-deploy command. Pre-deploy containers couldn't reach `postgres.railway.internal`.
 - `/api/health` runs `SELECT 1` and returns 503 `database_unavailable` if Postgres is unreachable. Railway's health check uses it.
 
 ## Adding an endpoint
