@@ -8,6 +8,7 @@ import { QuotaBadge } from '../components/QuotaBadge.tsx'
 import { RecentSearches } from '../components/RecentSearches.tsx'
 import { SearchForm } from '../components/SearchForm.tsx'
 import { timeAgo } from '../lib/format.ts'
+import { useKeyboardShortcuts } from '../lib/shortcuts.ts'
 
 const EMPTY_FORM: NewsSearchParams = { q: '', sort: 'latest', period: null }
 
@@ -61,6 +62,14 @@ export function SearchPage() {
     },
     // A quota error changes what the badge should show.
     onError: () => queryClient.invalidateQueries({ queryKey: ['quota'] }),
+  })
+
+  useKeyboardShortcuts({
+    onSlash: () => document.getElementById('search-input')?.focus(),
+    // Esc closes the detail panel, keeping the current search.
+    onEscape: () => {
+      if (articleId !== null && searchId !== null) setSearchParams({ search: String(searchId) })
+    },
   })
 
   const search = stored.data

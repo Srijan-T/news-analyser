@@ -34,8 +34,10 @@ export function SearchForm({ initial, onSearch }: Props) {
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search a topic, company or person…"
+        id="search-input"
+        placeholder="Search a topic, company or person…  ( / )"
         aria-label="Search terms"
+        aria-keyshortcuts="/"
         maxLength={200}
         className="min-w-64 flex-1 rounded-md border border-line-strong bg-surface px-3 py-2 focus:border-muted focus:outline-none"
       />
