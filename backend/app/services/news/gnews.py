@@ -8,7 +8,12 @@ from typing import Any
 
 import httpx
 
-from app.services.news.base import NewsProviderError, NormalizedArticle, SearchParams
+from app.services.news.base import (
+    NewsProviderError,
+    NormalizedArticle,
+    SearchParams,
+    http_url_or_none,
+)
 
 DEFAULT_BASE_URL = "https://gnews.io/api/v4"
 PAGE_SIZE = 10  # free plan maximum
@@ -26,7 +31,11 @@ def clean_snippet(content: str | None) -> str | None:
     return _TRUNCATION_MARKER.sub("…", content).strip() or None
 
 
-def normalize(raw: dict[str, Any]) -> NormalizedArticle:
+def normalize(raw: dict[str, Any]) -> NormalizedArticle | None:
+    """Map one GNews article to ours. Returns None if its link isn't a safe http(s) URL."""
+    url = http_url_or_none(raw.get("url"))
+    if url is None:
+        return None
     source = raw.get("source") or {}
     return NormalizedArticle(
         provider="gnews",
@@ -34,10 +43,10 @@ def normalize(raw: dict[str, Any]) -> NormalizedArticle:
         title=raw["title"],
         description=raw.get("description") or None,
         snippet=clean_snippet(raw.get("content")),
-        url=raw["url"],
-        image_url=raw.get("image") or None,
+        url=url,
+        image_url=http_url_or_none(raw.get("image")),
         source_name=source.get("name") or "Unknown source",
-        source_url=source.get("url") or None,
+        source_url=http_url_or_none(source.get("url")),
         published_at=raw["publishedAt"],
     )
 
@@ -82,7 +91,8 @@ class GNewsProvider:
             query["from"] = since.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         data = self._get("/search", query)
-        return [normalize(article) for article in data.get("articles", [])]
+        articles = (normalize(raw) for raw in data.get("articles", []))
+        return [a for a in articles if a is not None]
 
     def _get(self, path: str, query: dict[str, str | int]) -> dict[str, Any]:
         try:

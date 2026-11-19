@@ -6,6 +6,7 @@ a provider means writing one new class, not touching the API or the frontend.
 
 from datetime import datetime
 from typing import Literal, Protocol
+from urllib.parse import urlparse
 
 from pydantic import BaseModel
 
@@ -19,6 +20,17 @@ class SearchParams(BaseModel):
     q: str
     sort: SortOrder = "latest"
     period: Period | None = None
+
+
+def http_url_or_none(value: object) -> str | None:
+    """Return the URL only if it is http(s). Provider data is untrusted, and the frontend puts
+    these URLs in href/src, so a `javascript:` or `data:` URL here would be an XSS vector."""
+    if not isinstance(value, str):
+        return None
+    parsed = urlparse(value.strip())
+    if parsed.scheme in ("http", "https") and parsed.netloc:
+        return value.strip()
+    return None
 
 
 class NormalizedArticle(BaseModel):

@@ -119,3 +119,40 @@ def test_network_failure_is_unavailable() -> None:
 )
 def test_clean_snippet(content: str | None, expected: str | None) -> None:
     assert clean_snippet(content) == expected
+
+
+def _raw_article(**overrides: object) -> dict[str, object]:
+    article: dict[str, object] = {
+        "id": "a1",
+        "title": "Title",
+        "description": "Desc",
+        "content": "Body",
+        "url": "https://example.com/story",
+        "image": "https://example.com/img.jpg",
+        "publishedAt": "2026-11-19T10:00:00Z",
+        "source": {"name": "Example", "url": "https://example.com"},
+    }
+    return article | overrides
+
+
+def test_articles_with_non_http_urls_are_dropped() -> None:
+    articles = [
+        _raw_article(id="ok"),
+        _raw_article(id="js", url="javascript:alert(document.cookie)"),
+        _raw_article(id="data", url="data:text/html,<script>alert(1)</script>"),
+    ]
+    provider = make_provider(lambda _: httpx.Response(200, json={"articles": articles}))
+
+    results = provider.search(SearchParams(q="ai"))
+
+    assert [a.provider_article_id for a in results] == ["ok"]
+
+
+def test_non_http_image_and_source_urls_are_cleared() -> None:
+    raw = _raw_article(image="javascript:alert(1)", source={"name": "X", "url": "ftp://x"})
+    provider = make_provider(lambda _: httpx.Response(200, json={"articles": [raw]}))
+
+    [article] = provider.search(SearchParams(q="ai"))
+
+    assert article.image_url is None
+    assert article.source_url is None

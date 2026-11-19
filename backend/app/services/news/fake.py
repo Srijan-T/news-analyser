@@ -15,7 +15,8 @@ class FakeNewsProvider:
 
     def __init__(self, fixture: Path = FIXTURE) -> None:
         raw = json.loads(fixture.read_text())
-        self._articles = [normalize(a) for a in raw["articles"]]
+        articles = (normalize(a) for a in raw["articles"])
+        self._articles = [a for a in articles if a is not None]
 
     def search(self, params: SearchParams) -> list[NormalizedArticle]:
         words = params.q.lower().split()
