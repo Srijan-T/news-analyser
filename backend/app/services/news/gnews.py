@@ -51,17 +51,20 @@ def normalize(raw: dict[str, Any]) -> NormalizedArticle | None:
     )
 
 
-def _error_message(response: httpx.Response) -> str:
-    """GNews errors look like {"errors": ["msg"]} or {"errors": {"q": "msg"}}."""
+def _parse_errors(response: httpx.Response) -> tuple[str, dict[str, str]]:
+    """GNews errors are {"errors": ["msg", ...]} for request-level problems (e.g. a missing key)
+    or {"errors": {"q": "msg"}} when a specific parameter is at fault.
+    Returns (combined message, per-parameter errors)."""
     try:
         errors = response.json().get("errors")
     except ValueError:
-        return response.text
+        return response.text, {}
     if isinstance(errors, dict):
-        return " ".join(str(v) for v in errors.values())
+        by_param = {str(k): str(v) for k, v in errors.items()}
+        return " ".join(by_param.values()), by_param
     if isinstance(errors, list):
-        return " ".join(str(v) for v in errors)
-    return response.text
+        return " ".join(str(v) for v in errors), {}
+    return response.text, {}
 
 
 class GNewsProvider:
@@ -107,9 +110,11 @@ class GNewsProvider:
         if status == 200:
             return response.json()
 
-        message = _error_message(response)
-        if status == 400 and "query" in message.lower():
-            raise NewsProviderError.invalid_query(message)
+        message, by_param = _parse_errors(response)
+        # Decide by structure, not wording: GNews's missing-key message also mentions the
+        # "apikey query parameter", so matching on "query" would blame the user's search.
+        if status == 400 and "q" in by_param:
+            raise NewsProviderError.invalid_query(by_param["q"])
         if status == 403 and "quota" in message.lower():
             raise NewsProviderError.quota_exceeded(
                 "Today's news search quota is used up. It resets at 00:00 UTC."

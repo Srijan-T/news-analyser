@@ -15,11 +15,12 @@ def get_news_provider() -> NewsProvider:
     settings = get_settings()
     if settings.news_provider == "fake":
         return FakeNewsProvider()
-    if settings.gnews_api_key is None:
+    api_key = settings.gnews_api_key.get_secret_value().strip() if settings.gnews_api_key else ""
+    if not api_key:  # .env.example ships GNEWS_API_KEY= (empty), so treat blank as missing
         raise AppError(
             500, "news_provider_not_configured", "NEWS_PROVIDER=gnews but GNEWS_API_KEY is not set"
         )
     return GNewsProvider(
-        api_key=settings.gnews_api_key.get_secret_value(),
+        api_key=api_key,
         client=httpx.Client(timeout=10.0),
     )

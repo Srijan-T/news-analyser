@@ -78,7 +78,17 @@ def test_latest_sort_maps_to_published_at_and_no_period_sends_no_from() -> None:
     ("status", "errors", "expected_status", "expected_code"),
     [
         (400, {"q": "The query has a syntax error."}, 400, "invalid_query"),
-        (400, ["The request has no API key."], 502, "news_provider_misconfigured"),
+        # Real GNews wording: it mentions the "apikey query parameter", which must not be
+        # mistaken for a query-syntax error.
+        (
+            400,
+            [
+                "The request has no API key. Send your API key in the apikey query parameter "
+                "or the X-Api-Key header."
+            ],
+            502,
+            "news_provider_misconfigured",
+        ),
         (401, ["The API key doesn't match any account."], 502, "news_provider_misconfigured"),
         (403, ["Your daily quota of 100 requests is used up."], 429, "news_quota_exceeded"),
         (403, ["Verify your email address."], 502, "news_provider_misconfigured"),
