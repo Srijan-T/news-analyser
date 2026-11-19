@@ -4,8 +4,7 @@ export type SortOrder = 'relevance' | 'latest'
 export type Period = '24h' | '7d' | '30d'
 
 export type Article = {
-  provider: string
-  provider_article_id: string
+  id: number
   title: string
   description: string | null
   snippet: string | null
@@ -22,8 +21,28 @@ export type NewsSearchParams = {
   period: Period | null
 }
 
-export type NewsSearchResponse = {
+export type SearchSummary = {
+  id: number
   provider: string
   query: string
-  items: Article[]
+  sort: SortOrder
+  period: Period | null
+  result_count: number
+  created_at: string // ISO 8601
+}
+
+export type Search = SearchSummary & { items: Article[] }
+
+export type SearchPage = {
+  items: SearchSummary[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export type Quota = {
+  provider: string
+  limit: number | null
+  used: number
+  remaining: number | null
 }

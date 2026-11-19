@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     # "fake" serves a saved response and uses no API quota; "gnews" calls the real API.
     news_provider: Literal["gnews", "fake"] = "fake"
     gnews_api_key: SecretStr | None = None
+    # Real provider calls allowed per UTC day; GNews free is 100, so keep a small margin.
+    news_daily_request_limit: int = 95
 
     # Local default: the docker-compose Postgres (port 5433). Railway injects DATABASE_URL.
     database_url: str = "postgresql+psycopg://app:app@localhost:5433/news_analyser"

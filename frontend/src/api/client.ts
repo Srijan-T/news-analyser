@@ -1,7 +1,7 @@
 // Thin typed wrapper around fetch. Every backend error has the shape
 // {"error": {"code", "message", "details"}}, which we turn into an ApiError.
 
-import type { NewsSearchParams, NewsSearchResponse } from './types.ts'
+import type { NewsSearchParams, Quota, Search, SearchPage } from './types.ts'
 
 export class ApiError extends Error {
   readonly status: number
@@ -69,9 +69,10 @@ export const api = {
     apiFetch<void>('/auth/login', { method: 'POST', body: JSON.stringify({ password }) }),
   logout: () => apiFetch<void>('/auth/logout', { method: 'POST' }),
 
-  searchNews: ({ q, sort, period }: NewsSearchParams) => {
-    const params = new URLSearchParams({ q, sort })
-    if (period) params.set('period', period)
-    return apiFetch<NewsSearchResponse>(`/news/search?${params}`)
-  },
+  /** Runs a search, or returns an identical one from the last 30 minutes (no quota spent). */
+  createSearch: ({ q, sort, period }: NewsSearchParams) =>
+    apiFetch<Search>('/searches', { method: 'POST', body: JSON.stringify({ q, sort, period }) }),
+  getSearch: (id: number) => apiFetch<Search>(`/searches/${id}`),
+  listSearches: (limit = 10) => apiFetch<SearchPage>(`/searches?limit=${limit}`),
+  quota: () => apiFetch<Quota>('/quota'),
 }
