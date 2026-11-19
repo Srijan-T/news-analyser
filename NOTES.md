@@ -87,6 +87,12 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - Use raw colours (with `dark:` variants) only when the colour carries meaning, as `SentimentBadge` does.
 - The `ThemeToggle` stores `'light' | 'dark'` in `localStorage['theme']`; no stored value means System. The inline script in `index.html` repeats that logic before first paint, so keep the two in sync.
 
+## UX helpers (frontend)
+
+- **Toasts:** `const toast = useToast(); toast('Saved', 'success')` (from `lib/toast.ts`, provided by `components/ToastProvider.tsx`). They auto-dismiss after 4.5 s, show at most three at once, and are announced by screen readers.
+- **Status-aware API calls:** `apiRequest()` returns `{ data, status }`. `createSearch` returns `{ search, cached }` (200 = reused) and `analyzeArticle` returns `{ analysis, created }` (201 = new). The toasts use these.
+- **Keyboard:** `useKeyboardShortcuts({ onSlash, onEscape })` in `lib/shortcuts.ts`. It ignores keys while you're typing in a field.
+
 ## Adding an endpoint
 
 1. Create or extend `backend/app/routers/<resource>.py` with a pydantic response model.
