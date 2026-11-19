@@ -4,8 +4,10 @@ import { ApiError, api } from '../api/client.ts'
 import type { NewsSearchParams } from '../api/types.ts'
 import { ArticleCard, ArticleCardSkeleton } from '../components/ArticleCard.tsx'
 import { ArticleDetail } from '../components/ArticleDetail.tsx'
+import { EarlierMatches } from '../components/EarlierMatches.tsx'
 import { QuotaBadge } from '../components/QuotaBadge.tsx'
 import { RecentSearches } from '../components/RecentSearches.tsx'
+import { SearchNotice } from '../components/SearchNotice.tsx'
 import { SearchForm } from '../components/SearchForm.tsx'
 import { timeAgo } from '../lib/format.ts'
 import { useKeyboardShortcuts } from '../lib/shortcuts.ts'
@@ -79,9 +81,17 @@ export function SearchPage() {
   })
 
   const search = stored.data
+  // The form shows what ran, except for "any word" searches, whose OR query is an internal
+  // detail: there it shows what was typed.
   const formValues = search
-    ? { q: search.query, sort: search.sort, period: search.period }
+    ? {
+        q: search.match_mode === 'any' ? (search.original_query ?? search.query) : search.query,
+        sort: search.sort,
+        period: search.period,
+      }
     : EMPTY_FORM
+  const selectArticle = (articleId: number) =>
+    search && setSearchParams({ search: String(search.id), article: String(articleId) })
   const error = create.error ?? (searchId !== null ? stored.error : null)
 
   return (
@@ -133,11 +143,25 @@ export function SearchPage() {
             Enter a topic above, or reopen a recent search.
           </p>
         ) : search.items.length === 0 ? (
-          <p className="text-sm text-muted">
-            No articles found for “{search.query}”. Try broader terms or a longer time window.
-          </p>
+          <div className="space-y-6">
+            <p className="text-sm text-muted">
+              No new articles found for “{search.query}”. Try broader terms or a longer time
+              window.
+            </p>
+            <EarlierMatches
+              query={search.query}
+              selectedId={articleId}
+              onSelect={selectArticle}
+            />
+          </div>
         ) : (
           <div className="space-y-3">
+            <SearchNotice
+              search={search}
+              onSearchExactly={(typed) =>
+                create.mutate({ q: typed, sort: search.sort, period: search.period, exact: true })
+              }
+            />
             <p className="text-xs text-muted">
               {search.items.length} articles · fetched {timeAgo(search.created_at)} · free news
               plan, so articles can be up to ~12 hours old
@@ -147,9 +171,7 @@ export function SearchPage() {
                 key={article.id}
                 article={article}
                 selected={article.id === articleId}
-                onSelect={() =>
-                  setSearchParams({ search: String(search.id), article: String(article.id) })
-                }
+                onSelect={() => selectArticle(article.id)}
               />
             ))}
           </div>

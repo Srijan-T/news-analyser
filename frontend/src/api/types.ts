@@ -37,6 +37,8 @@ export type NewsSearchParams = {
   q: string
   sort: SortOrder
   period: Period | null
+  /** Search exactly as typed: no typo correction or "match any word" fallback. */
+  exact?: boolean
 }
 
 export type SearchSummary = {
@@ -46,6 +48,10 @@ export type SearchSummary = {
   sort: SortOrder
   period: Period | null
   result_count: number
+  /** What was typed, when the query that ran differs (typo corrected or broadened). */
+  original_query: string | null
+  /** 'any': nothing matched every word, so results match any of them. */
+  match_mode: 'all' | 'any'
   created_at: string // ISO 8601
 }
 
