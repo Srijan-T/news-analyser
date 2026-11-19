@@ -3,6 +3,23 @@
 export type SortOrder = 'relevance' | 'latest'
 export type Period = '24h' | '7d' | '30d'
 
+export type Sentiment = 'positive' | 'neutral' | 'negative'
+
+export type Analysis = {
+  id: number
+  article_id: number
+  tldr: string
+  key_points: string[]
+  sentiment: Sentiment
+  score: number // -1 (very negative) .. 1 (very positive)
+  rationale: string
+  evidence: string[] // short quotes copied from the article text
+  text_source: 'snippet' | 'full'
+  model: string
+  prompt_version: string
+  created_at: string
+}
+
 export type Article = {
   id: number
   title: string
@@ -13,6 +30,7 @@ export type Article = {
   source_name: string
   source_url: string | null
   published_at: string // ISO 8601
+  analysis: Analysis | null
 }
 
 export type NewsSearchParams = {

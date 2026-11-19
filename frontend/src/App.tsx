@@ -13,7 +13,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
+        <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-3">
           <span className="text-lg font-semibold">News Analyser</span>
           <nav className="flex gap-1">
             <NavLink to="/" end className={navClass}>
@@ -29,7 +29,7 @@ export default function App() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8">
         <Routes>
           <Route path="/" element={<SearchPage />} />
           <Route path="/history" element={<HistoryPage />} />
