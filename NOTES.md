@@ -66,6 +66,15 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - Production migrations run in the Docker `CMD` (`alembic upgrade head && exec uvicorn ...`), not as a Railway pre-deploy command. Pre-deploy containers couldn't reach `postgres.railway.internal`.
 - `/api/health` runs `SELECT 1` and returns 503 `database_unavailable` if Postgres is unreachable. Railway's health check uses it.
 
+## AI analysis (`backend/app/services/ai/`, `services/analyses.py`)
+
+- `base.py`: `AnalysisDraft` (the schema sent to OpenAI: plain types plus an enum, which strict mode supports), `ArticleText`, the `Analyzer` protocol, `AnalysisError`, and `normalize()`. `normalize()` clamps the score, caps the lists, and drops any evidence quote not found in the text.
+- `prompts.py`: `SYSTEM_PROMPT`, `build_input()`, `PROMPT_VERSION`. Change the version whenever you change the wording.
+- `openai_analyzer.py`: `client.responses.parse(..., text_format=AnalysisDraft)`. `output_parsed is None` means a refusal → `ai_output_invalid`. A pydantic `ValidationError` → `ai_output_invalid`. `openai.APIError` → `ai_unavailable`.
+- `fake.py`: keyword-count sentiment for offline dev and tests. `get_analyzer()` in `__init__.py` picks one from `ANALYZER`.
+- `services/analyses.analyze_article`: returns the stored analysis if there is one (no AI call). Otherwise it analyzes, stores and commits. A unique-constraint race keeps the first.
+- Frontend: `ArticleDetail.tsx` (panel plus analyze mutation), `SentimentBadge.tsx`. The selected article is `?article=` in the URL.
+
 ## Adding an endpoint
 
 1. Create or extend `backend/app/routers/<resource>.py` with a pydantic response model.
