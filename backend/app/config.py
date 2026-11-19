@@ -21,11 +21,12 @@ class Settings(BaseSettings):
     # where Vite serves it instead.
     static_dir: Path | None = None
 
-    # HTTP basic auth for the deployed app. Off unless both are set.
-    basic_auth_user: str | None = None
-    basic_auth_password: SecretStr | None = None
+    # Sign-in for the deployed app: one shared password. Off when APP_PASSWORD is unset.
+    # SESSION_SECRET signs the session cookie; required whenever APP_PASSWORD is set.
+    app_password: SecretStr | None = None
+    session_secret: SecretStr | None = None
 
-    @field_validator("static_dir", "basic_auth_user", "basic_auth_password", mode="before")
+    @field_validator("static_dir", "app_password", "session_secret", mode="before")
     @classmethod
     def blank_is_unset(cls, value: object) -> object:
         """`.env.example` ships empty values (VAR=), which should mean "not set"."""
