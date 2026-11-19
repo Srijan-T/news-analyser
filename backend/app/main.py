@@ -4,7 +4,7 @@ from app.auth import SessionAuthMiddleware
 from app.config import Settings, get_settings
 from app.db import make_engine, make_session_factory
 from app.errors import register_error_handlers
-from app.routers import auth, health, searches
+from app.routers import articles, auth, health, searches
 from app.spa import mount_spa
 
 
@@ -25,6 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")
     app.include_router(searches.router, prefix="/api")
+    app.include_router(articles.router, prefix="/api")
 
     if settings.static_dir:
         mount_spa(app, settings.static_dir)  # last, so API routes match first
