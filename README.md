@@ -37,7 +37,7 @@ I first evaluated **FreeNewsAPI.io**, which advertises real-time articles and fu
 - `make db` starts Postgres in Docker on port **5433**, so it doesn't clash with a local install on 5432. It creates two databases: `news_analyser` for dev and `news_analyser_test` for tests.
 - `make migrate` applies migrations. `make migration name="..."` generates one from model changes.
 - Tests migrate the test database to the latest version at the start of each run, which also checks that every migration applies cleanly.
-- In production, Railway runs `alembic upgrade head` as a pre-deploy step, so a failing migration blocks the deploy.
+- In production, the container runs `alembic upgrade head` before starting the server. If a migration fails, the server never starts, the health check fails, and Railway keeps the previous deploy serving. This isn't a Railway pre-deploy command because Railway's private network (where Postgres lives) is only guaranteed at runtime.
 
 ## Checks
 

@@ -41,6 +41,10 @@ RUN useradd --system --no-create-home app
 USER app
 
 EXPOSE 8000
+# Migrate, then serve. Migrations run here rather than as a Railway pre-deploy command because
+# Railway's private network (postgres.railway.internal) is only guaranteed at runtime. If a
+# migration fails, `&&` stops uvicorn starting, the health check never passes, and Railway
+# keeps the previous deploy serving.
 # Railway sets PORT; default to 8000 elsewhere. --proxy-headers trusts Railway's proxy for
 # the client's scheme and IP.
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
