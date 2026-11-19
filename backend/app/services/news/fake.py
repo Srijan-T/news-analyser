@@ -19,14 +19,17 @@ class FakeNewsProvider:
         self._articles = [a for a in articles if a is not None]
 
     def search(self, params: SearchParams) -> list[NormalizedArticle]:
-        words = params.q.lower().split()
-        matches = [
+        """Like GNews: every word must match, or any group separated by OR. Unmatched queries
+        return nothing, so the zero-result path (and its fallbacks) shows up in dev too."""
+        groups = [g.lower().replace('"', "").split() for g in params.q.split(" OR ")]
+        results = [
             a
             for a in self._articles
-            if all(w in f"{a.title} {a.description or ''}".lower() for w in words)
+            if any(
+                all(w in f"{a.title} {a.description or ''}".lower() for w in words)
+                for words in groups
+            )
         ]
-        # The fixture is small, so an unmatched query returns everything rather than nothing.
-        results = matches or self._articles
         if params.sort == "latest":
             results = sorted(results, key=lambda a: a.published_at, reverse=True)
         return [a.model_copy(update={"provider": self.name}) for a in results]

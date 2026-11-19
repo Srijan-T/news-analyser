@@ -1,10 +1,15 @@
 """Searches: run them through the news provider, cache them, and enforce the daily quota.
 
-A row in `searches` exists only for a real provider call, so:
+A row in `searches` exists only for real provider calls, so:
 - a repeat of the same search within CACHE_TTL reuses the stored row (no API call), and
-- counting today's rows for a provider gives today's API usage.
+- summing today's `provider_requests` gives today's API usage.
+
+Forgiving search: when a search finds nothing, retry once with a typo-corrected query and
+then once with "match any word" (at most 3 provider calls), storing whichever found results.
 """
 
+import re
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -14,6 +19,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models import Article, Search, SearchResult
 from app.services.news.base import NewsProvider, NewsProviderError, NormalizedArticle, SearchParams
+from app.services.query_fix import OPERATORS, QueryCorrector
 
 CACHE_TTL = timedelta(minutes=30)
 
@@ -29,10 +35,23 @@ class QuotaStatus:
         return None if self.limit is None else max(self.limit - self.used, 0)
 
 
-def cache_key(provider: str, params: SearchParams) -> str:
-    """Searches that differ only in case or spacing share a key."""
+def cache_key(provider: str, params: SearchParams, exact: bool = False) -> str:
+    """Searches that differ only in case or spacing share a key. Keyed on what was *typed*,
+    so repeating a typo reuses the stored corrected result. Exact searches (no fallbacks)
+    are cached separately."""
     query = " ".join(params.q.lower().split())
-    return f"{provider}|{query}|{params.sort}|{params.period or ''}"
+    return f"{provider}|{query}|{params.sort}|{params.period or ''}" + ("|exact" if exact else "")
+
+
+def broaden(query: str) -> str | None:
+    """'environmental improvements' -> 'environmental OR improvements' (GNews syntax), or None
+    when there's nothing to broaden (one word, or the query already uses operators)."""
+    tokens = query.split()
+    if len(tokens) < 2 or any(t in OPERATORS for t in tokens):
+        return None
+    # GNews: put quotes around any word with a character other than a letter or a digit.
+    quoted = [t if re.fullmatch(r"[A-Za-z0-9]+", t) or '"' in t else f'"{t}"' for t in tokens]
+    return " OR ".join(quoted)
 
 
 def run_search(
@@ -40,12 +59,16 @@ def run_search(
     provider: NewsProvider,
     params: SearchParams,
     daily_limit: int | None,
+    corrector: QueryCorrector | None = None,
+    *,
+    exact: bool = False,
+    min_interval: float = 0.0,
     now: datetime | None = None,
 ) -> tuple[Search, bool]:
     """Return (search, created). Serves a fresh cached search if there is one; otherwise checks
-    the quota, calls the provider and stores the results."""
+    the quota, calls the provider (with fallbacks unless `exact`) and stores the results."""
     now = now or datetime.now(UTC)
-    key = cache_key(provider.name, params)
+    key = cache_key(provider.name, params, exact)
 
     cached = _fresh_search(db, key, now)
     if cached is not None:
@@ -69,17 +92,24 @@ def run_search(
             "Recent searches still work."
         )
 
-    # Raises NewsProviderError; nothing is stored on failure. Providers occasionally repeat
-    # an article, which would break the (search_id, article_id) key, so keep the first of each.
-    articles = _dedupe_by_url(provider.search(params))
+    calls = _ProviderCalls(provider, params, budget=quota.remaining, min_interval=min_interval)
+    # The first call's errors reach the client (400 bad query, 429, 502...); nothing stored.
+    articles = calls.run(params.q)
+    ran_query, match_mode = params.q, "all"
+
+    if not articles and not exact:
+        ran_query, match_mode, articles = _fallbacks(calls, params.q, corrector)
 
     search = Search(
         provider=provider.name,
-        query=params.q,
+        query=ran_query,
+        original_query=params.q if ran_query != params.q else None,
         sort=params.sort,
         period=params.period,
         cache_key=key,
+        match_mode=match_mode,
         result_count=len(articles),
+        provider_requests=calls.made,
     )
     db.add(search)
     db.flush()  # assigns search.id
@@ -91,6 +121,61 @@ def run_search(
     db.commit()
     db.refresh(search)
     return search, True
+
+
+class _ProviderCalls:
+    """Makes provider calls for one search: counts them (they all spend quota), keeps within
+    the remaining daily budget, and spaces them out (GNews free allows 1 request/second)."""
+
+    def __init__(
+        self, provider: NewsProvider, params: SearchParams, budget: int | None, min_interval: float
+    ) -> None:
+        self._provider = provider
+        self._params = params
+        self._budget = budget
+        self._min_interval = min_interval
+        self._last_call: float | None = None
+        self.made = 0
+
+    @property
+    def can_call(self) -> bool:
+        return self._budget is None or self.made < self._budget
+
+    def run(self, query: str) -> list[NormalizedArticle]:
+        if self._last_call is not None and self._min_interval:
+            wait = self._min_interval - (time.monotonic() - self._last_call)
+            if wait > 0:
+                time.sleep(wait)
+        self.made += 1  # a failed call still counts against the provider's quota
+        try:
+            results = self._provider.search(self._params.model_copy(update={"q": query}))
+        finally:
+            self._last_call = time.monotonic()
+        # Providers occasionally repeat an article, which would break the
+        # (search_id, article_id) key, so keep the first of each.
+        return _dedupe_by_url(results)
+
+
+def _fallbacks(
+    calls: _ProviderCalls, query: str, corrector: QueryCorrector | None
+) -> tuple[str, str, list[NormalizedArticle]]:
+    """After an empty first search: try the corrected query, then "match any word".
+    Returns (query that ran, match mode, articles); the original query if nothing helped.
+    A failing or over-budget fallback just stops here; the first call already succeeded."""
+    corrected = corrector.suggest(query) if corrector else None
+    if corrected and corrected.lower() == query.lower():
+        corrected = None
+    candidates = [(corrected, "all"), (broaden(corrected or query), "any")]
+    for candidate, mode in candidates:
+        if not candidate or not calls.can_call:
+            continue
+        try:
+            articles = calls.run(candidate)
+        except NewsProviderError:
+            break
+        if articles:
+            return candidate, mode, articles
+    return query, "all", []
 
 
 def _dedupe_by_url(articles: list[NormalizedArticle]) -> list[NormalizedArticle]:

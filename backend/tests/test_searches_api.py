@@ -261,7 +261,7 @@ def test_duplicate_urls_from_provider_are_stored_once(make_client: MakeClient) -
 def test_dedupe_keeps_first_occurrence_in_provider_order() -> None:
     from app.services.searches import _dedupe_by_url
 
-    a, b, c = FakeNewsProvider().search(SearchParams(q="zzz-no-match"))[:3]
+    a, b, c = FakeNewsProvider().search(SearchParams(q="openai"))[:3]
     assert [x.url for x in _dedupe_by_url([a, b, a, c])] == [a.url, b.url, c.url]
 
 
