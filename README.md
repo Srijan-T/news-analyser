@@ -65,9 +65,23 @@ Production environment variables (set in Railway, never committed):
 | `NEWS_PROVIDER=gnews`, `GNEWS_API_KEY` | Live news |
 | `APP_PASSWORD`, `SESSION_SECRET` | Puts the app behind a sign-in page (one shared password) so strangers can't spend the API quotas. `SESSION_SECRET` signs the session cookie. `/api/health` stays open for Railway's health check. |
 | `DATABASE_URL` | Railway Postgres connection string (a reference variable). `postgresql://` URLs are converted to the psycopg driver automatically. |
+| `NEWS_DAILY_REQUEST_LIMIT` | New searches allowed per UTC day (default 95; GNews free is 100) |
 | `PORT` | Injected by Railway; defaults to 8000 |
 
-## API conventions
+## API
+
+Interactive docs: `/docs` (OpenAPI). Main endpoints:
+
+| Method & path | Purpose |
+|---|---|
+| `POST /api/searches` `{q, sort, period}` | Run a search. **201** = new; **200** = an identical search from the last 30 min was reused, so no news-API call was made. **429** once the daily quota is used. |
+| `GET /api/searches?limit&offset` | Search history, newest first (with `total`). |
+| `GET /api/searches/{id}` | A stored search with its articles. Never calls the news API. |
+| `GET /api/quota` | News-API requests used and left today (resets 00:00 UTC). |
+| `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/session` | Sign-in. |
+| `GET /api/health` | App and database health. |
+
+### Conventions
 
 Every error response uses one shape:
 
