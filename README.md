@@ -13,7 +13,7 @@ Search real-time news, get an AI summary and sentiment for any article, and keep
 
 ## Run locally
 
-Prerequisites: `uv`, Node 20+.
+Prerequisites: `uv`, Node 22.22+ (React Router 8 requires it).
 
 ```bash
 make install
