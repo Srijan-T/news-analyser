@@ -20,9 +20,14 @@ export class ApiError extends Error {
 type ErrorBody = { error?: { code?: string; message?: string; details?: unknown } }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  // Absolute URL from the origin, not a relative path: if the page was opened via a
+  // https://user:pass@host link (basic auth), the page's base URL keeps those credentials and
+  // the browser refuses relative fetches. The origin never includes them, and the browser
+  // still sends the cached login.
+  const url = new URL(`/api${path}`, window.location.origin)
   let res: Response
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(url, {
       ...init,
       headers: { 'Content-Type': 'application/json', ...init?.headers },
     })
