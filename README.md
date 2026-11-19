@@ -46,6 +46,7 @@ flowchart LR
 | **One Structured Outputs call per article** | The SDK returns a validated pydantic object, so there's no JSON parsing. The prompt is versioned and stored with each analysis, along with the model and token usage. | One prompt does both summary and sentiment, which is cheaper and consistent, but they can't be tuned separately. |
 | **The model's output is checked, not trusted** | The score is clamped and the lists are capped. Evidence quotes are kept **only if they appear verbatim in the article**. Postgres CHECK constraints back this up. A refusal or invalid output returns an honest 502; there's never a fabricated result. | Some real quotes get dropped if the model paraphrases them. |
 | **No LLM "confidence" score** | Self-reported confidence isn't calibrated and overlaps with the score. Evidence quotes make the sentiment checkable instead. | Less of a single "how sure" number to show. |
+| **Forgiving search** (only when a search finds nothing) | Retry once with a typo-corrected query, then once with "match any word" (at most 3 GNews calls, all counted against the quota and spaced out for GNews's 1 request/second limit). Typos are fixed by a free local spell-checker when it's confident, and by gpt-6-luna otherwise (it knows names: "nvdia" → "nvidia", not "nadia"). The banner says what ran, with "Search instead for…". Stored articles are also fuzzy-matched in Postgres (`pg_trgm`) at no quota cost. | A typo'd search can use up to 3 of the 95 daily requests. Searches that already return results are never second-guessed. |
 | **Each article analyzed once** | Asking again returns the stored analysis (200) without calling the AI. | Re-running (e.g. after a prompt change) isn't in the UI yet. |
 | **Password sign-in page**, not HTTP basic auth | Basic auth's browser pop-up doesn't appear in embedded browsers or link previews. Visitors saw raw JSON. A form plus an HMAC-signed, HttpOnly cookie works everywhere, with no server-side session store. | One shared password, with no per-user accounts or audit trail. |
 | **Migrations run at container start**, not as a Railway pre-deploy step | Railway's private network (where Postgres lives) is only guaranteed at runtime. A failed migration still stops the server starting, so the health check keeps the old deploy serving. | With several replicas, each would try to migrate at startup. That would need a migration job or an advisory lock to scale. |
@@ -128,6 +129,7 @@ Production environment variables (set in Railway, never committed):
 | `NEWS_PROVIDER=gnews`, `GNEWS_API_KEY` | Live news |
 | `APP_PASSWORD`, `SESSION_SECRET` | Puts the app behind a sign-in page (one shared password) so strangers can't spend the API quotas. `SESSION_SECRET` signs the session cookie. `/api/health` stays open for Railway's health check. |
 | `DATABASE_URL` | Railway Postgres connection string (a reference variable). `postgresql://` URLs are converted to the psycopg driver automatically. |
+| `NEWS_MIN_REQUEST_INTERVAL` | Seconds between a search's fallback calls (default 1.1; GNews free allows 1 request/second) |
 | `NEWS_DAILY_REQUEST_LIMIT` | New searches allowed per UTC day (default 95; GNews free is 100) |
 | `ANALYZER=openai`, `OPENAI_API_KEY`, `OPENAI_MODEL` | AI analysis (model defaults to `gpt-6-luna`). Locally `ANALYZER=fake` analyzes offline without spending tokens. |
 | `PORT` | Injected by Railway; defaults to 8000 |
@@ -138,9 +140,10 @@ Interactive docs: `/docs` (OpenAPI). Main endpoints:
 
 | Method & path | Purpose |
 |---|---|
-| `POST /api/searches` `{q, sort, period}` | Run a search. **201** = new; **200** = an identical search from the last 30 min was reused, so no news-API call was made. **429** once the daily quota is used. |
+| `POST /api/searches` `{q, sort, period, exact}` | Run a search. **201** = new; **200** = an identical search from the last 30 min was reused, so no news-API call was made. **429** once the daily quota is used. With no results (and `exact: false`) it retries with a corrected query, then "any word"; `original_query` and `match_mode` in the response say what happened. |
 | `GET /api/searches?limit&offset` | Search history, newest first (with `total`). |
 | `GET /api/searches/{id}` | A stored search with its articles. Never calls the news API. |
+| `GET /api/articles/similar?q=&limit=` | Stored articles whose titles fuzzily match `q` (Postgres `pg_trgm`). Never calls the news API. |
 | `GET /api/quota` | News-API requests used and left today (resets 00:00 UTC). |
 | `GET /api/articles?analyzed&sentiment&source&search_id&published_from&published_to&sort&limit&offset` | Stored articles with their analyses, filtered and sorted (with `total`). |
 | `GET /api/stats?<same filters>` | Counts per sentiment, average score, and the sources list. Uses the **same** filter code as `/api/articles`, so the numbers always match the list. |
