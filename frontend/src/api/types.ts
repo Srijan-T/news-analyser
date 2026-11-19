@@ -100,3 +100,21 @@ export type Stats = {
   average_score: number | null
   sources: string[]
 }
+
+export type BatchItemStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed'
+
+export type AnalysisBatch = {
+  id: number
+  /** 'done' once no item is pending or running. */
+  status: 'running' | 'done'
+  counts: Record<BatchItemStatus, number>
+  items: {
+    article_id: number
+    position: number
+    /** 'skipped': the article was already analyzed. */
+    status: BatchItemStatus
+    error_code: string | null
+    analysis: Analysis | null
+  }[]
+  created_at: string
+}

@@ -3,6 +3,7 @@
 
 import type {
   Analysis,
+  AnalysisBatch,
   Article,
   ArticlePage,
   HistoryFilters,
@@ -138,4 +139,11 @@ export const api = {
     })
     return { analysis: data, created: status === 201 }
   },
+  /** Starts a background job analyzing up to 10 articles; poll it with getAnalysisBatch. */
+  createAnalysisBatch: (articleIds: number[]) =>
+    apiFetch<AnalysisBatch>('/analysis-batches', {
+      method: 'POST',
+      body: JSON.stringify({ article_ids: articleIds }),
+    }),
+  getAnalysisBatch: (id: number) => apiFetch<AnalysisBatch>(`/analysis-batches/${id}`),
 }
