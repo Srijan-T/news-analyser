@@ -47,14 +47,14 @@ def test_unknown_api_route_is_json_404_not_index(client: TestClient) -> None:
 
 
 def test_trailing_slash_api_path_redirects_like_without_spa(client: TestClient) -> None:
-    res = client.get("/api/news/search/", params={"q": "ai"}, follow_redirects=False)
+    res = client.get("/api/searches/", params={"limit": "5"}, follow_redirects=False)
 
     assert res.status_code == 307
-    assert res.headers["location"].endswith("/api/news/search?q=ai")
+    assert res.headers["location"].endswith("/api/searches?limit=5")
 
 
 def test_wrong_method_on_api_route_is_405_not_spa(client: TestClient) -> None:
-    res = client.post("/api/news/search")
+    res = client.delete("/api/searches")
 
     assert res.status_code == 405
 

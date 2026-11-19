@@ -7,7 +7,7 @@ from app.main import create_app
 
 PASSWORD = "correct horse"
 SECRET = "test-session-secret"
-PROTECTED = "/api/news/search?q=ai"
+PROTECTED = "/api/searches"
 
 
 def make_client(**overrides: object) -> TestClient:
