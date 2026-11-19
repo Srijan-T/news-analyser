@@ -1,7 +1,7 @@
 """API request and response models (what clients see), separate from database models."""
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -15,6 +15,10 @@ class CreateSearch(BaseModel):
     q: Query = Field(description="Search terms (GNews query syntax)")
     sort: SortOrder = "latest"
     period: Period | None = None
+    exact: bool = Field(
+        default=False,
+        description="Search exactly as typed: no typo correction or 'match any word' fallback",
+    )
 
 
 class AnalysisOut(BaseModel):
@@ -58,6 +62,12 @@ class SearchSummary(BaseModel):
     sort: SortOrder
     period: Period | None
     result_count: int
+    original_query: str | None = Field(
+        description="What was typed, when the query that ran differs (corrected or broadened)"
+    )
+    match_mode: Literal["all", "any"] = Field(
+        description='"any": results match any of the words (broadened after finding nothing)'
+    )
     created_at: datetime
 
 
@@ -97,3 +107,7 @@ class StatsOut(BaseModel):
     by_sentiment: SentimentCounts
     average_score: float | None = Field(description="Mean score; null when nothing matches")
     sources: list[str] = Field(description="Every source with an analysis (for filter menus)")
+
+
+class SimilarArticles(BaseModel):
+    items: list[ArticleOut]

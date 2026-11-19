@@ -460,6 +460,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
     { name = "sqlalchemy" },
+    { name = "symspellpy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -479,6 +480,7 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.9" },
     { name = "pydantic-settings", specifier = ">=2.16.3" },
     { name = "sqlalchemy", specifier = ">=2.1.9" },
+    { name = "symspellpy", specifier = ">=6.10.2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
 ]
 
@@ -911,6 +913,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/48/bb/3d8757f21e9a53d9035c9eb039a777047139a16bfdbedfc7a58241c3d914/starlette-1.10.0.tar.gz", hash = "sha256:b8399098d4c1e3522734f7235dc79b1fc967f96cf139c81e0fa30479e0685f9b", size = 2734356, upload-time = "2026-10-24T15:04:12.342Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/2e/947cfe02def9371c07cd5bf5b6b61c829e9aecb9904db02a66cfafbc1eec/starlette-1.10.0-py3-none-any.whl", hash = "sha256:478c0ab3b4ced6e82719849c118fa406f0278a3499c1a898cd15cd31bdc38ce4", size = 80571, upload-time = "2026-10-24T15:04:10.371Z" },
+]
+
+[[package]]
+name = "symspellpy"
+version = "6.10.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/34/c7f195d5f22adfcccf5d661d7e902d1f802d09e877566fc798874ac93670/symspellpy-6.10.2.tar.gz", hash = "sha256:9f456c6fe374ec2a8bd5476ce7a81e6ab00d7e26ecbfb754dbf42c9d42db182e", size = 2617920, upload-time = "2026-11-07T01:07:00.021Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a8/e7/a685e9d0e90eecc832f2249946dde9e69c23d49a6ca1d23fd949d6ed0554/symspellpy-6.10.2-py3-none-any.whl", hash = "sha256:5a7cee286ef16e9ee25913ea5b9fb42ebc51ced60ce2b85c4d4be30ac3e81a51", size = 2612512, upload-time = "2026-11-07T01:06:57.442Z" },
 ]
 
 [[package]]

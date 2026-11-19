@@ -23,6 +23,8 @@ class Settings(BaseSettings):
 
     # Real provider calls allowed per UTC day; GNews free is 100, so keep a small margin.
     news_daily_request_limit: int = 95
+    # Minimum gap between one search's fallback calls; GNews free allows 1 request/second.
+    news_min_request_interval: float = 1.1
 
     # Local default: the docker-compose Postgres (port 5433). Railway injects DATABASE_URL.
     database_url: str = "postgresql+psycopg://app:app@localhost:5433/news_analyser"

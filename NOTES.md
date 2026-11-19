@@ -75,6 +75,14 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - `services/analyses.analyze_article`: returns the stored analysis if there is one (no AI call). Otherwise it analyzes, stores and commits. A unique-constraint race keeps the first.
 - Frontend: `ArticleDetail.tsx` (panel plus analyze mutation), `SentimentBadge.tsx`. The selected article is `?article=` in the URL.
 
+## Forgiving search (`services/query_fix.py`, `run_search` in `services/searches.py`)
+
+- Only when the first search finds nothing (and `exact` is false), `_fallbacks()` tries the corrector's suggestion, then `broaden()` ("a OR b"). `_ProviderCalls` counts every call into `provider_requests`, stops at the remaining daily budget, and sleeps `NEWS_MIN_REQUEST_INTERVAL` between calls.
+- `LocalSpellCorrector.check()` is **confident** only for a distance-1 fix to a common word (≥ 5M uses) that beats the runner-up 10×. These thresholds were calibrated on real cases (see the `test_query_fix.py` parametrize lists). Capitalized words and operators are never touched. `HybridCorrector` asks the LLM only when local is unsure.
+- The cache key is what was **typed** (plus `|exact`). The stored `query` is what **ran**, and `original_query` is set only if they differ.
+- `GET /api/articles/similar` uses `word_similarity()` from `pg_trgm`; the migration enables the extension. The frontend's `EarlierMatches` shows these when a search finds nothing.
+- The fake provider behaves like GNews (no match gives `[]`, and `OR` is supported), so these paths show up in dev.
+
 ## History (`services/history.py`, `pages/HistoryPage.tsx`)
 
 - `_conditions(filters)` builds the WHERE clauses over `Article LEFT JOIN Analysis`. Both `list_articles` and `stats` use it, which is why the stats strip always matches the list.

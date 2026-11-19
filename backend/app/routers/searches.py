@@ -11,6 +11,7 @@ from app.schemas import ArticleOut, CreateSearch, QuotaOut, SearchOut, SearchPag
 from app.services import searches
 from app.services.news import get_news_provider
 from app.services.news.base import NewsProvider, SearchParams
+from app.services.query_fix import QueryCorrector, get_query_corrector
 
 router = APIRouter(tags=["searches"])
 
@@ -44,10 +45,24 @@ def _to_out(search: Search) -> SearchOut:
     },
 )
 def create_search(
-    body: CreateSearch, request: Request, response: Response, db: DbSession, provider: Provider
+    body: CreateSearch,
+    request: Request,
+    response: Response,
+    db: DbSession,
+    provider: Provider,
+    corrector: Annotated[QueryCorrector, Depends(get_query_corrector)],
 ) -> SearchOut:
+    settings: Settings = request.app.state.settings
     params = SearchParams(q=body.q, sort=body.sort, period=body.period)
-    search, created = searches.run_search(db, provider, params, _daily_limit(request, provider))
+    search, created = searches.run_search(
+        db,
+        provider,
+        params,
+        _daily_limit(request, provider),
+        corrector,
+        exact=body.exact,
+        min_interval=settings.news_min_request_interval,
+    )
     if not created:
         response.status_code = 200
     return _to_out(searches.get_search(db, search.id) or search)

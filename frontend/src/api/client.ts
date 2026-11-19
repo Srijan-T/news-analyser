@@ -104,10 +104,10 @@ export const api = {
 
   /** Runs a search, or returns an identical one from the last 30 minutes (no quota spent). */
   /** `cached`: the API reused an identical search from the last 30 minutes (HTTP 200). */
-  createSearch: async ({ q, sort, period }: NewsSearchParams) => {
+  createSearch: async ({ q, sort, period, exact = false }: NewsSearchParams) => {
     const { data, status } = await apiRequest<Search>('/searches', {
       method: 'POST',
-      body: JSON.stringify({ q, sort, period }),
+      body: JSON.stringify({ q, sort, period, exact }),
     })
     return { search: data, cached: status === 200 }
   },
@@ -124,6 +124,11 @@ export const api = {
   },
   stats: (filters: HistoryFilters) => apiFetch<Stats>(`/stats?${historyQuery(filters)}`),
 
+  /** Stored articles whose titles fuzzily match `q`. Database only: costs no news quota. */
+  similarArticles: (q: string, limit = 5) =>
+    apiFetch<{ items: Article[] }>(
+      `/articles/similar?${new URLSearchParams({ q, limit: String(limit) })}`,
+    ),
   getArticle: (id: number) => apiFetch<Article>(`/articles/${id}`),
   /** Analyzes once; asking again returns the stored analysis without calling the AI. */
   /** `created`: a new analysis was made (HTTP 201) rather than the stored one returned. */
