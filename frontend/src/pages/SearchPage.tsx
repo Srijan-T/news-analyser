@@ -70,8 +70,10 @@ export function SearchPage() {
   const error = create.error ?? (searchId !== null ? stored.error : null)
 
   return (
-    <div className="grid grid-cols-[13rem_minmax(0,1fr)_24rem] gap-6">
-      <aside>
+    // Desktop-first: three columns from 1024px; below that, one column (results, then the
+    // selected article, then history) so phones and tablets never scroll sideways.
+    <div className="grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)_20rem] xl:grid-cols-[13rem_minmax(0,1fr)_24rem]">
+      <aside className="order-last lg:order-none">
         <RecentSearches currentId={searchId} />
       </aside>
 
@@ -139,7 +141,7 @@ export function SearchPage() {
         )}
       </section>
 
-      <aside className="sticky top-6 self-start">
+      <aside className="lg:sticky lg:top-6 lg:self-start">
         {articleId !== null ? (
           <ArticleDetail key={articleId} articleId={articleId} searchId={searchId} />
         ) : search && search.items.length > 0 ? (
