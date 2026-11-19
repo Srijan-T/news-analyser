@@ -28,19 +28,20 @@
 }
 
 .dark {
+  /* Zinc: near-black with a faint cool tint, so cards still lift off the page. */
   color-scheme: dark;
-  --canvas: oklch(12.9% 0.042 264.695); /* slate-950 */
-  --surface: oklch(20.8% 0.042 265.755); /* slate-900 */
-  --subtle: oklch(27.9% 0.041 260.031); /* slate-800 */
-  --subtle-strong: oklch(37.2% 0.044 257.287); /* slate-700 */
-  --line: oklch(27.9% 0.041 260.031); /* slate-800 */
-  --line-strong: oklch(37.2% 0.044 257.287); /* slate-700 */
-  --fg: oklch(96.8% 0.007 247.896); /* slate-100 */
-  --soft: oklch(86.9% 0.022 252.894); /* slate-300 */
-  --muted: oklch(70.4% 0.04 256.788); /* slate-400 */
-  --faint: oklch(55.4% 0.046 257.417); /* slate-500 */
-  --accent: oklch(96.8% 0.007 247.896); /* slate-100: light buttons on dark */
-  --accent-fg: oklch(20.8% 0.042 265.755);
+  --canvas: oklch(14.1% 0.005 285.823); /* zinc-950 */
+  --surface: oklch(21% 0.006 285.885); /* zinc-900 */
+  --subtle: oklch(27.4% 0.006 286.033); /* zinc-800 */
+  --subtle-strong: oklch(37% 0.013 285.805); /* zinc-700 */
+  --line: oklch(27.4% 0.006 286.033); /* zinc-800 */
+  --line-strong: oklch(37% 0.013 285.805); /* zinc-700 */
+  --fg: oklch(96.7% 0.001 286.375); /* zinc-100 */
+  --soft: oklch(87.1% 0.006 286.286); /* zinc-300 */
+  --muted: oklch(70.5% 0.015 286.067); /* zinc-400 */
+  --faint: oklch(55.2% 0.016 285.938); /* zinc-500 */
+  --accent: oklch(96.7% 0.001 286.375); /* zinc-100: light buttons on dark */
+  --accent-fg: oklch(21% 0.006 285.885); /* zinc-900 */
   --danger-bg: oklch(25.8% 0.092 26.042 / 0.5); /* red-950, translucent */
   --danger-line: oklch(39.6% 0.141 25.723); /* red-900 */
   --danger-fg: oklch(80.8% 0.114 19.571); /* red-300 */
