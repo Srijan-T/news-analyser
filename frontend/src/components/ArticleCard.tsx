@@ -1,7 +1,15 @@
 import { useState } from 'react'
-import type { Article } from '../api/types.ts'
+import type { Article, Sentiment } from '../api/types.ts'
 import { timeAgo } from '../lib/format.ts'
 import { SentimentBadge } from './SentimentBadge.tsx'
+
+// A coloured left edge so analyzed articles' tone reads at a glance in a list. The badge
+// still states the sentiment in words, so colour is never the only signal.
+const SENTIMENT_EDGE: Record<Sentiment, string> = {
+  positive: 'border-l-4 border-l-emerald-500',
+  neutral: 'border-l-4 border-l-slate-400 dark:border-l-zinc-500',
+  negative: 'border-l-4 border-l-rose-500',
+}
 
 type Props = {
   article: Article
@@ -20,7 +28,7 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
     <article
       className={`flex gap-4 rounded-lg border bg-surface p-4 ${
         selected ? 'border-accent ring-1 ring-accent' : 'border-line'
-      }`}
+      } ${article.analysis ? SENTIMENT_EDGE[article.analysis.sentiment] : ''}`}
     >
       {showImage ? (
         <img
