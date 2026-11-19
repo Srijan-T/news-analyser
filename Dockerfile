@@ -22,12 +22,11 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 
 # Dependencies first (cached layer), then the app code, which changes more often.
-# No `--mount=type=cache` here: Railway's builder rejects cache mounts without a
-# Railway-specific id, and the dependency layer above already gives most of the speed-up.
+# Plain COPY rather than RUN --mount: Railway's builder rejects bind mounts, and cache mounts
+# without a Railway-specific id, so this Dockerfile uses no --mount flags at all.
 ENV UV_NO_CACHE=1
-RUN --mount=type=bind,source=backend/uv.lock,target=uv.lock \
-    --mount=type=bind,source=backend/pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-dev --no-install-project
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN uv sync --locked --no-dev --no-install-project
 COPY backend/ ./
 RUN uv sync --locked --no-dev
 
