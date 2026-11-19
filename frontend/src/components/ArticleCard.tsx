@@ -18,8 +18,8 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
 
   return (
     <article
-      className={`flex gap-4 rounded-lg border bg-white p-4 ${
-        selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'
+      className={`flex gap-4 rounded-lg border bg-surface p-4 ${
+        selected ? 'border-accent ring-1 ring-accent' : 'border-line'
       }`}
     >
       {showImage ? (
@@ -28,13 +28,13 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
           alt=""
           loading="lazy"
           onError={() => setImageFailed(true)}
-          className="h-20 w-28 shrink-0 rounded-md bg-slate-100 object-cover"
+          className="h-20 w-28 shrink-0 rounded-md bg-subtle object-cover"
         />
       ) : (
-        <div className="h-20 w-28 shrink-0 rounded-md bg-slate-100" />
+        <div className="h-20 w-28 shrink-0 rounded-md bg-subtle" />
       )}
       <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+        <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
           <span>
             {article.source_name} · {timeAgo(article.published_at)}
           </span>
@@ -42,7 +42,7 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-slate-900 hover:underline"
+            className="hover:text-fg hover:underline"
           >
             Original ↗
           </a>
@@ -59,7 +59,7 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
             {article.title}
           </button>
         </h2>
-        {blurb && <p className="mt-1 line-clamp-2 text-sm text-slate-600">{blurb}</p>}
+        {blurb && <p className="mt-1 line-clamp-2 text-sm text-soft">{blurb}</p>}
       </div>
     </article>
   )
@@ -67,12 +67,12 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
 
 export function ArticleCardSkeleton() {
   return (
-    <div className="flex animate-pulse gap-4 rounded-lg border border-slate-200 bg-white p-4">
-      <div className="h-20 w-28 shrink-0 rounded-md bg-slate-200" />
+    <div className="flex animate-pulse gap-4 rounded-lg border border-line bg-surface p-4">
+      <div className="h-20 w-28 shrink-0 rounded-md bg-subtle-strong" />
       <div className="flex-1 space-y-2 py-1">
-        <div className="h-3 w-1/4 rounded bg-slate-200" />
-        <div className="h-4 w-3/4 rounded bg-slate-200" />
-        <div className="h-3 w-full rounded bg-slate-200" />
+        <div className="h-3 w-1/4 rounded bg-subtle-strong" />
+        <div className="h-4 w-3/4 rounded bg-subtle-strong" />
+        <div className="h-3 w-full rounded bg-subtle-strong" />
       </div>
     </div>
   )

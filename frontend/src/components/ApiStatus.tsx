@@ -19,7 +19,7 @@ export function ApiStatus() {
       : ['API online', 'bg-emerald-500']
 
   return (
-    <span className="flex items-center gap-2 text-xs text-slate-500">
+    <span className="flex items-center gap-2 text-xs text-muted">
       <span className={`h-2 w-2 rounded-full ${dot}`} />
       {label}
     </span>

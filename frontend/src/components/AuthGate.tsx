@@ -31,9 +31,9 @@ function SignInPage() {
         : null
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+    <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
       <form
-        className="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-6"
+        className="w-full max-w-sm space-y-4 rounded-lg border border-line bg-surface p-6"
         onSubmit={(e) => {
           e.preventDefault()
           if (password) login.mutate(password)
@@ -41,7 +41,7 @@ function SignInPage() {
       >
         <div>
           <h1 className="text-xl font-semibold">News Analyser</h1>
-          <p className="mt-1 text-sm text-slate-600">Enter the access password to continue.</p>
+          <p className="mt-1 text-sm text-soft">Enter the access password to continue.</p>
         </div>
         <input
           type="password"
@@ -51,17 +51,17 @@ function SignInPage() {
           placeholder="Password"
           autoComplete="current-password"
           autoFocus
-          className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
+          className="w-full rounded-md border border-line-strong px-3 py-2 focus:border-muted focus:outline-none"
         />
         {error && (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="text-sm text-danger-fg">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={!password || login.isPending}
-          className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg disabled:opacity-40"
         >
           {login.isPending ? 'Signing in…' : 'Sign in'}
         </button>
@@ -83,7 +83,7 @@ export function SignOutButton() {
   return (
     <button
       onClick={() => logout.mutate()}
-      className="text-xs text-slate-500 hover:text-slate-900 hover:underline"
+      className="text-xs text-muted hover:text-fg hover:underline"
     >
       Sign out
     </button>
