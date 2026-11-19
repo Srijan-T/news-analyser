@@ -234,3 +234,32 @@ def test_fake_provider_has_no_quota(client: TestClient) -> None:
         "used": 0,
         "remaining": None,
     }
+
+
+# --- review fixes -------------------------------------------------------------------------
+
+
+class DuplicatingProvider(FakeNewsProvider):
+    """Returns the first article twice, as a provider occasionally does."""
+
+    def search(self, params: SearchParams) -> list[NormalizedArticle]:
+        articles = super().search(params)
+        return [articles[0], *articles]
+
+
+def test_duplicate_urls_from_provider_are_stored_once(make_client: MakeClient) -> None:
+    client = make_client(DuplicatingProvider())
+
+    res = search(client, "openai")
+
+    assert res.status_code == 201
+    urls = [a["url"] for a in res.json()["items"]]
+    assert len(urls) == len(set(urls))
+    assert res.json()["result_count"] == len(urls)
+
+
+def test_dedupe_keeps_first_occurrence_in_provider_order() -> None:
+    from app.services.searches import _dedupe_by_url
+
+    a, b, c = FakeNewsProvider().search(SearchParams(q="zzz-no-match"))[:3]
+    assert [x.url for x in _dedupe_by_url([a, b, a, c])] == [a.url, b.url, c.url]

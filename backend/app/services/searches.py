@@ -47,12 +47,18 @@ def run_search(
     now = now or datetime.now(UTC)
     key = cache_key(provider.name, params)
 
-    cached = db.scalars(
-        select(Search)
-        .where(Search.cache_key == key, Search.created_at >= now - CACHE_TTL)
-        .order_by(Search.created_at.desc())
-        .limit(1)
-    ).first()
+    cached = _fresh_search(db, key, now)
+    if cached is not None:
+        return cached, False
+
+    # Only one new search per provider at a time: without this, concurrent requests near the
+    # limit could all read the same count and all call the provider. The transaction-scoped
+    # advisory lock is released at commit/rollback. GNews's free plan allows 1 request/second
+    # anyway, so serializing costs nothing in practice.
+    db.execute(select(func.pg_advisory_xact_lock(func.hashtext(f"news-search:{provider.name}"))))
+
+    # While we waited, another request may have just run this same search.
+    cached = _fresh_search(db, key, now)
     if cached is not None:
         return cached, False
 
@@ -63,7 +69,9 @@ def run_search(
             "Recent searches still work."
         )
 
-    articles = provider.search(params)  # raises NewsProviderError; nothing stored on failure
+    # Raises NewsProviderError; nothing is stored on failure. Providers occasionally repeat
+    # an article, which would break the (search_id, article_id) key, so keep the first of each.
+    articles = _dedupe_by_url(provider.search(params))
 
     search = Search(
         provider=provider.name,
@@ -85,9 +93,26 @@ def run_search(
     return search, True
 
 
+def _dedupe_by_url(articles: list[NormalizedArticle]) -> list[NormalizedArticle]:
+    """Keep the first occurrence of each URL, in the provider's order."""
+    unique: dict[str, NormalizedArticle] = {}
+    for article in articles:
+        unique.setdefault(article.url, article)
+    return list(unique.values())
+
+
+def _fresh_search(db: Session, key: str, now: datetime) -> Search | None:
+    return db.scalars(
+        select(Search)
+        .where(Search.cache_key == key, Search.created_at >= now - CACHE_TTL)
+        .order_by(Search.created_at.desc())
+        .limit(1)
+    ).first()
+
+
 def _upsert_articles(db: Session, articles: list[NormalizedArticle]) -> dict[str, int]:
     """Insert new articles and refresh known ones (matched by URL). Returns url -> id."""
-    unique = {a.url: a for a in articles}  # a URL twice in one batch would fail ON CONFLICT
+    unique = {a.url: a for a in articles}  # already unique; kept as a guard for ON CONFLICT
     if not unique:
         return {}
     stmt = insert(Article).values(
