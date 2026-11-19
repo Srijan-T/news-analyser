@@ -19,9 +19,10 @@ export function ApiStatus() {
       : ['API online', 'bg-emerald-500']
 
   return (
-    <span className="flex items-center gap-2 text-xs text-muted">
+    // Phones show just the dot; the label stays for screen readers and as a tooltip.
+    <span title={label} className="flex items-center gap-2 text-xs text-muted">
       <span className={`h-2 w-2 rounded-full ${dot}`} />
-      {label}
+      <span className="sr-only sm:not-sr-only">{label}</span>
     </span>
   )
 }
