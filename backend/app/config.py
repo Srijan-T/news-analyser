@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     # "fake" serves a saved response and uses no API quota; "gnews" calls the real API.
     news_provider: Literal["gnews", "fake"] = "fake"
     gnews_api_key: SecretStr | None = None
+    # "fake" analyzes offline (no tokens spent); "openai" calls the OpenAI API.
+    analyzer: Literal["openai", "fake"] = "fake"
+    openai_api_key: SecretStr | None = None
+    openai_model: str = "gpt-6-luna"
+
     # Real provider calls allowed per UTC day; GNews free is 100, so keep a small margin.
     news_daily_request_limit: int = 95
 

@@ -37,7 +37,8 @@ class SlowProvider(FakeNewsProvider):
 def committed_tables(engine: Engine) -> Iterator[None]:
     yield
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE searches, articles, search_results"))
+        # CASCADE also clears tables that reference these (e.g. analyses).
+        conn.execute(text("TRUNCATE searches, articles, search_results CASCADE"))
 
 
 def test_concurrent_searches_cannot_exceed_the_daily_quota(committed_tables: None) -> None:
