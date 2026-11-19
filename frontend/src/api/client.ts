@@ -51,9 +51,23 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 }
 
 export type Health = { status: string }
+export type Session = { auth_required: boolean; authenticated: boolean }
+
+/** TanStack Query cache key for the session; invalidate it to re-check sign-in. */
+export const SESSION_KEY = ['session']
+
+/** True for a 401 meaning "not signed in / session expired". */
+export function isUnauthenticated(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'unauthenticated'
+}
 
 export const api = {
   health: () => apiFetch<Health>('/health'),
+
+  session: () => apiFetch<Session>('/auth/session'),
+  login: (password: string) =>
+    apiFetch<void>('/auth/login', { method: 'POST', body: JSON.stringify({ password }) }),
+  logout: () => apiFetch<void>('/auth/logout', { method: 'POST' }),
 
   searchNews: ({ q, sort, period }: NewsSearchParams) => {
     const params = new URLSearchParams({ q, sort })

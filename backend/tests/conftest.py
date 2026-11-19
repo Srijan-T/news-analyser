@@ -5,5 +5,5 @@ local .env (e.g. NEWS_PROVIDER=gnews) from making tests call real APIs."""
 import os
 
 os.environ["NEWS_PROVIDER"] = "fake"
-for name in ("GNEWS_API_KEY", "BASIC_AUTH_USER", "BASIC_AUTH_PASSWORD", "STATIC_DIR"):
+for name in ("GNEWS_API_KEY", "APP_PASSWORD", "SESSION_SECRET", "STATIC_DIR"):
     os.environ[name] = ""

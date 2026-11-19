@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from 'react-router'
 import { ApiStatus } from './components/ApiStatus.tsx'
+import { SignOutButton } from './components/AuthGate.tsx'
 import { HistoryPage } from './pages/HistoryPage.tsx'
 import { SearchPage } from './pages/SearchPage.tsx'
 
@@ -22,8 +23,9 @@ export default function App() {
               History
             </NavLink>
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-4">
             <ApiStatus />
+            <SignOutButton />
           </div>
         </div>
       </header>

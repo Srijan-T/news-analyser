@@ -42,7 +42,11 @@ frontend/
 
 - `create_app(settings)` builds the app from a `Settings` object. Tests pass their own, e.g. `create_app(Settings(static_dir=tmp))`.
 - `app/spa.py`: when `STATIC_DIR` is set (in Docker), a catch-all route serves the built files and falls back to `index.html`. It's registered **last**, so API routes win. Unknown `/api/*` paths still return the JSON 404.
-- `app/auth.py`: basic-auth ASGI middleware, active only when both `BASIC_AUTH_*` vars are set. `/api/health` is exempt.
+- `app/auth.py` + `app/routers/auth.py`: password sign-in, active only when `APP_PASSWORD` is set (it also needs `SESSION_SECRET`, or startup fails).
+  - `POST /api/auth/login` sets an HttpOnly cookie `"<expiry>.<HMAC-SHA256(expiry)>"`. Nothing is stored server-side; `verify_session` just recomputes the signature.
+  - `SessionAuthMiddleware` returns 401 `unauthenticated` for `/api/*` without a valid cookie, except health and the auth endpoints. Pages stay open so React can render the form.
+  - Frontend: `AuthGate` (in `components/AuthGate.tsx`) reads `GET /api/auth/session`. The `onError` handler in `main.tsx` re-checks the session whenever any request gets `unauthenticated`.
+  - Why not HTTP basic auth? Many browsers (embedded ones, link previews, Chrome after a cancel) never show its pop-up, so users got raw JSON.
 - `tests/conftest.py` pins env vars so your local `backend/.env` never changes test behaviour.
 - The frontend's `apiFetch` builds URLs from `window.location.origin`. A relative `fetch` breaks when the page was opened via a `user:pass@host` link.
 
