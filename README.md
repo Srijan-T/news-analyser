@@ -66,7 +66,7 @@ Each item below has its own PR or commit, with a test where the bug could be rep
 - **One PR per feature**, each with a description (what / why / how verified / what wasn't verified), small focused commits, and merges that keep the history readable.
 - **`main` is protected:** merging requires green CI (backend, frontend and a production Docker build) and resolved review threads.
 - **CI** runs ruff, pyright, pytest against a real Postgres, oxlint, tsc, the Docker build, and `alembic check` (which fails if models and migrations drift apart).
-- **Tests:** 119 backend tests against real Postgres, each in a rolled-back transaction, plus real-concurrency tests for the race conditions. Bug fixes start with a failing test.
+- **Tests:** 119 backend tests against real Postgres. Almost all run inside a transaction that's rolled back afterwards. The exception is the real-concurrency tests for the race conditions, which need genuinely committed transactions and truncate their tables when they finish. Bug fixes start with a failing test.
 - **Pull requests get an automated AI code review (Codex).** Each finding was fixed (test-first where it was a bug), answered in its thread, and resolved before merging.
 
 ## Limitations and what I'd do with more time
@@ -99,6 +99,7 @@ By default the backend uses `NEWS_PROVIDER=fake`, which replays a saved GNews re
 - `make db` starts Postgres in Docker on port **5433**, so it doesn't clash with a local install on 5432. It creates two databases: `news_analyser` for dev and `news_analyser_test` for tests.
 - `make migrate` applies migrations. `make migration name="..."` generates one from model changes.
 - Tests migrate the test database to the latest version at the start of each run, which also checks that every migration applies cleanly.
+- **Tests need a disposable database.** The concurrency tests commit data and then `TRUNCATE searches, articles, search_results CASCADE`, so never point `TEST_DATABASE_URL` at a database whose data you want to keep. The default, `news_analyser_test` from `make db`, exists only for this.
 - In production, the container runs `alembic upgrade head` before starting the server. If a migration fails, the server never starts, the health check fails, and Railway keeps the previous deploy serving. This isn't a Railway pre-deploy command because Railway's private network (where Postgres lives) is only guaranteed at runtime.
 
 ## Checks
