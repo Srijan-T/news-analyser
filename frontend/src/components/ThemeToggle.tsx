@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   type ThemePreference,
+  applyTheme,
   followSystemTheme,
   getThemePreference,
   setThemePreference,
@@ -16,8 +17,13 @@ const OPTIONS: { value: ThemePreference; label: string; icon: string }[] = [
 export function ThemeToggle() {
   const [preference, setPreference] = useState<ThemePreference>(getThemePreference)
 
-  // Follows OS changes while on 'system' (an external system, so an effect fits here).
-  useEffect(() => followSystemTheme(preference), [preference])
+  // Sync the page with the preference on mount (in case the inline script in index.html
+  // couldn't), then follow OS changes while on 'system'. The DOM class and the OS theme
+  // are external systems, so an effect fits here.
+  useEffect(() => {
+    applyTheme(preference)
+    return followSystemTheme(preference)
+  }, [preference])
 
   return (
     <div
