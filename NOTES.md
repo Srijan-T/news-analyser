@@ -50,6 +50,15 @@ frontend/
 - `tests/conftest.py` pins env vars so your local `backend/.env` never changes test behaviour.
 - The frontend's `apiFetch` builds URLs from `window.location.origin`. A relative `fetch` breaks when the page was opened via a `user:pass@host` link.
 
+## Database (`backend/app/db.py`, `backend/migrations/`)
+
+- `create_app` builds an engine from `settings.database_url` and stores a session factory on `app.state`. Routes take `db: Session = Depends(get_db)`, which gives one session per request and always closes it.
+- `Base` (in `db.py`) has a naming convention so constraints get predictable names in migrations.
+- Models live in `app/models.py`, which is imported by `migrations/env.py` so autogenerate sees every table. Workflow: edit models → `make migration name="..."` → **read the generated file** → `make migrate`.
+- The folder is `migrations/`, not `alembic/`, so it can't shadow the `alembic` package.
+- Tests: `tests/conftest.py` points `DATABASE_URL` at `news_analyser_test` (or `TEST_DATABASE_URL` in CI) and runs `alembic upgrade head` once per test run.
+- `/api/health` runs `SELECT 1` and returns 503 `database_unavailable` if Postgres is unreachable. Railway's health check uses it.
+
 ## Adding an endpoint
 
 1. Create or extend `backend/app/routers/<resource>.py` with a pydantic response model.

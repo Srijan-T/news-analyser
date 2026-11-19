@@ -8,17 +8,17 @@ Search real-time news, get an AI summary and sentiment for any article, and keep
 
 - **Backend:** Python 3.13, FastAPI, managed with [uv](https://docs.astral.sh/uv/)
 - **Frontend:** React + TypeScript (Vite), Tailwind CSS, TanStack Query, React Router
-- **Database:** PostgreSQL (coming in a later PR)
+- **Database:** PostgreSQL 17 with SQLAlchemy 2.0 and Alembic migrations
 - **Hosting:** Railway, as one service: FastAPI serves both the API and the built frontend
 
 ## Run locally
 
-Prerequisites: `uv`, Node 22.22+ (React Router 8 requires it).
+Prerequisites: `uv`, Node 22.22+ (React Router 8 requires it), Docker (for Postgres).
 
 ```bash
 make install
 cp backend/.env.example backend/.env
-make dev
+make dev     # starts Postgres (port 5433), applies migrations, runs backend + frontend
 ```
 
 - App: http://localhost:5173 (Vite forwards `/api` requests to the backend)
@@ -31,6 +31,13 @@ By default the backend uses `NEWS_PROVIDER=fake`, which replays a saved GNews re
 [GNews](https://gnews.io): its free plan gives keyword search, 100 requests/day, articles about 12 hours behind real time, and a ~250-character snippet per article. The UI says so next to the results.
 
 I first evaluated **FreeNewsAPI.io**, which advertises real-time articles and full article text. A live probe showed that its keyword search had been removed (`q` returns "Search using the 'q' field has been removed."), and its title search returned HTTP 500. Since searching is the core of the brief, I rejected it. Providers sit behind a `NewsProvider` interface, so adding a full-text source later is one new class.
+
+## Database
+
+- `make db` starts Postgres in Docker on port **5433**, so it doesn't clash with a local install on 5432. It creates two databases: `news_analyser` for dev and `news_analyser_test` for tests.
+- `make migrate` applies migrations. `make migration name="..."` generates one from model changes.
+- Tests migrate the test database to the latest version at the start of each run, which also checks that every migration applies cleanly.
+- In production, Railway runs `alembic upgrade head` as a pre-deploy step, so a failing migration blocks the deploy.
 
 ## Checks
 
@@ -57,6 +64,7 @@ Production environment variables (set in Railway, never committed):
 |---|---|
 | `NEWS_PROVIDER=gnews`, `GNEWS_API_KEY` | Live news |
 | `APP_PASSWORD`, `SESSION_SECRET` | Puts the app behind a sign-in page (one shared password) so strangers can't spend the API quotas. `SESSION_SECRET` signs the session cookie. `/api/health` stays open for Railway's health check. |
+| `DATABASE_URL` | Railway Postgres connection string (a reference variable). `postgresql://` URLs are converted to the psycopg driver automatically. |
 | `PORT` | Injected by Railway; defaults to 8000 |
 
 ## API conventions
