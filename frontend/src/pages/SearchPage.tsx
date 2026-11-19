@@ -9,6 +9,7 @@ import { RecentSearches } from '../components/RecentSearches.tsx'
 import { SearchForm } from '../components/SearchForm.tsx'
 import { timeAgo } from '../lib/format.ts'
 import { useKeyboardShortcuts } from '../lib/shortcuts.ts'
+import { useToast } from '../lib/toast.ts'
 
 const EMPTY_FORM: NewsSearchParams = { q: '', sort: 'latest', period: null }
 
@@ -37,6 +38,7 @@ function readId(sp: URLSearchParams, name: string): number | null {
 
 export function SearchPage() {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const searchId = readId(searchParams, 'search')
   // The selected article is in the URL too (?search=1&article=5), so it survives refresh.
@@ -54,7 +56,11 @@ export function SearchPage() {
     mutationFn: api.createSearch,
     // Each new search can spend one of the day's news-API requests; never auto-retry.
     retry: false,
-    onSuccess: (search) => {
+    onSuccess: ({ search, cached }) => {
+      // Make the cache visible: reusing a recent search costs no news-API quota.
+      if (cached) {
+        toast(`Reused results fetched ${timeAgo(search.created_at)}, no news quota used`)
+      }
       queryClient.setQueryData(['search', search.id], search)
       queryClient.invalidateQueries({ queryKey: ['searches'] })
       queryClient.invalidateQueries({ queryKey: ['quota'] })

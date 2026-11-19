@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, api } from '../api/client.ts'
 import type { Analysis, Article } from '../api/types.ts'
 import { timeAgo } from '../lib/format.ts'
+import { useToast } from '../lib/toast.ts'
 import { SentimentBadge } from './SentimentBadge.tsx'
 
 function analysisError(error: Error): string {
@@ -15,13 +16,15 @@ function analysisError(error: Error): string {
 /** Detail panel for the selected article: its AI analysis, or a button to create one. */
 export function ArticleDetail({ articleId, searchId }: { articleId: number; searchId: number | null }) {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const article = useQuery({ queryKey: ['article', articleId], queryFn: () => api.getArticle(articleId) })
 
   const analyze = useMutation({
     mutationFn: () => api.analyzeArticle(articleId),
     // An AI call costs money and time; let the user decide whether to retry.
     retry: false,
-    onSuccess: (analysis) => {
+    onSuccess: ({ analysis, created }) => {
+      if (created) toast('Analysis saved to your history', 'success')
       queryClient.setQueryData<Article>(['article', articleId], (old) =>
         old ? { ...old, analysis } : old,
       )

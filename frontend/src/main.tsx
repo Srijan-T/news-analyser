@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router'
 import { SESSION_KEY, isUnauthenticated } from './api/client.ts'
 import App from './App.tsx'
 import { AuthGate } from './components/AuthGate.tsx'
+import { ToastProvider } from './components/ToastProvider.tsx'
 import './index.css'
 
 // If any request finds the session gone (expired or signed out elsewhere), re-check the
@@ -26,9 +27,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthGate>
-          <App />
-        </AuthGate>
+        <ToastProvider>
+          <AuthGate>
+            <App />
+          </AuthGate>
+        </ToastProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
