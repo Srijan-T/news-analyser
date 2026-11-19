@@ -29,7 +29,12 @@ export class ApiError extends Error {
 
 type ErrorBody = { error?: { code?: string; message?: string; details?: unknown } }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+/** Like apiFetch, but also returns the HTTP status for callers that care, e.g. 200 vs 201
+ * tells "reused an existing search" apart from "created a new one". */
+export async function apiRequest<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ data: T; status: number }> {
   // Absolute URL from the origin, not a relative path: if the page was opened via a
   // https://user:pass@host link (basic auth), the page's base URL keeps those credentials and
   // the browser refuses relative fetches. The origin never includes them, and the browser
@@ -45,7 +50,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     throw new ApiError(0, 'network_error', 'Could not reach the server')
   }
 
-  if (res.status === 204) return undefined as T
+  if (res.status === 204) return { data: undefined as T, status: 204 }
 
   const body: unknown = await res.json().catch(() => null)
   if (!res.ok) {
@@ -57,7 +62,11 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
       err?.details ?? null,
     )
   }
-  return body as T
+  return { data: body as T, status: res.status }
+}
+
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  return (await apiRequest<T>(path, init)).data
 }
 
 export type Health = { status: string; database: string }
@@ -94,8 +103,14 @@ export const api = {
   logout: () => apiFetch<void>('/auth/logout', { method: 'POST' }),
 
   /** Runs a search, or returns an identical one from the last 30 minutes (no quota spent). */
-  createSearch: ({ q, sort, period }: NewsSearchParams) =>
-    apiFetch<Search>('/searches', { method: 'POST', body: JSON.stringify({ q, sort, period }) }),
+  /** `cached`: the API reused an identical search from the last 30 minutes (HTTP 200). */
+  createSearch: async ({ q, sort, period }: NewsSearchParams) => {
+    const { data, status } = await apiRequest<Search>('/searches', {
+      method: 'POST',
+      body: JSON.stringify({ q, sort, period }),
+    })
+    return { search: data, cached: status === 200 }
+  },
   getSearch: (id: number) => apiFetch<Search>(`/searches/${id}`),
   listSearches: (limit = 10) => apiFetch<SearchPage>(`/searches?limit=${limit}`),
   quota: () => apiFetch<Quota>('/quota'),
@@ -111,6 +126,11 @@ export const api = {
 
   getArticle: (id: number) => apiFetch<Article>(`/articles/${id}`),
   /** Analyzes once; asking again returns the stored analysis without calling the AI. */
-  analyzeArticle: (id: number) =>
-    apiFetch<Analysis>(`/articles/${id}/analysis`, { method: 'POST' }),
+  /** `created`: a new analysis was made (HTTP 201) rather than the stored one returned. */
+  analyzeArticle: async (id: number) => {
+    const { data, status } = await apiRequest<Analysis>(`/articles/${id}/analysis`, {
+      method: 'POST',
+    })
+    return { analysis: data, created: status === 201 }
+  },
 }

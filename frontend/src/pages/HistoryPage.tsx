@@ -5,6 +5,7 @@ import type { ArticleSort, HistoryFilters, Period, Sentiment } from '../api/type
 import { ArticleCard, ArticleCardSkeleton } from '../components/ArticleCard.tsx'
 import { ArticleDetail } from '../components/ArticleDetail.tsx'
 import { StatsStrip } from '../components/StatsStrip.tsx'
+import { useKeyboardShortcuts } from '../lib/shortcuts.ts'
 
 const PAGE_SIZE = 10
 const SENTIMENTS: Sentiment[] = ['positive', 'neutral', 'negative']
@@ -74,6 +75,13 @@ export function HistoryPage() {
     if (value) next.set(name, value)
     setSearchParams(next)
   }
+
+  // Esc closes the detail panel, keeping filters and page.
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (articleId !== null) update('article', null, ['page'])
+    },
+  })
 
   const total = list.data?.total ?? 0
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, api } from '../api/client.ts'
 import type { Analysis, Article } from '../api/types.ts'
 import { timeAgo } from '../lib/format.ts'
+import { useToast } from '../lib/toast.ts'
 import { SentimentBadge } from './SentimentBadge.tsx'
 
 function analysisError(error: Error): string {
@@ -15,13 +16,15 @@ function analysisError(error: Error): string {
 /** Detail panel for the selected article: its AI analysis, or a button to create one. */
 export function ArticleDetail({ articleId, searchId }: { articleId: number; searchId: number | null }) {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const article = useQuery({ queryKey: ['article', articleId], queryFn: () => api.getArticle(articleId) })
 
   const analyze = useMutation({
     mutationFn: () => api.analyzeArticle(articleId),
     // An AI call costs money and time; let the user decide whether to retry.
     retry: false,
-    onSuccess: (analysis) => {
+    onSuccess: ({ analysis, created }) => {
+      if (created) toast('Analysis saved to your history', 'success')
       queryClient.setQueryData<Article>(['article', articleId], (old) =>
         old ? { ...old, analysis } : old,
       )
@@ -60,15 +63,16 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
 
       {analysis ? (
         <AnalysisView analysis={analysis} />
+      ) : analyze.isPending ? (
+        <AnalysisSkeleton />
       ) : (
         <div className="space-y-2">
           <button
             type="button"
             onClick={() => analyze.mutate()}
-            disabled={analyze.isPending}
-            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg disabled:opacity-60"
+            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg"
           >
-            {analyze.isPending ? 'Analyzing…' : 'Summarize & analyze sentiment'}
+            Summarize & analyze sentiment
           </button>
           {analyze.isError && (
             <p role="alert" className="text-sm text-danger-fg">
@@ -80,6 +84,30 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Placeholder in the shape of the analysis while the AI works, so the wait feels expected. */
+function AnalysisSkeleton() {
+  return (
+    <div role="status" aria-live="polite" className="space-y-4">
+      <p className="text-sm text-muted">Analyzing with AI… usually 3–10 seconds.</p>
+      <div className="animate-pulse space-y-4" aria-hidden="true">
+        <div className="h-5 w-28 rounded-full bg-subtle-strong" />
+        <div className="space-y-2">
+          <div className="h-4 w-full rounded bg-subtle-strong" />
+          <div className="h-4 w-4/5 rounded bg-subtle-strong" />
+        </div>
+        <div className="space-y-2 pl-5">
+          <div className="h-3 w-11/12 rounded bg-subtle" />
+          <div className="h-3 w-3/4 rounded bg-subtle" />
+          <div className="h-3 w-5/6 rounded bg-subtle" />
+        </div>
+        <div className="h-10 border-l-2 border-line-strong pl-3">
+          <div className="h-3 w-2/3 rounded bg-subtle" />
+        </div>
+      </div>
     </div>
   )
 }
