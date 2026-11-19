@@ -14,9 +14,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-canvas text-fg">
       <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-3">
-          <span className="text-lg font-semibold">News Analyser</span>
-          <nav className="flex gap-1">
+        {/* Phones: title and controls on the first row, the nav on its own row below. */}
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-3">
+          <span className="text-lg font-semibold whitespace-nowrap">News Analyser</span>
+          <nav className="order-last flex w-full gap-1 sm:order-none sm:w-auto">
             <NavLink to="/" end className={navClass}>
               Search
             </NavLink>
@@ -24,7 +25,7 @@ export default function App() {
               History
             </NavLink>
           </nav>
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-3 sm:gap-4">
             <ApiStatus />
             <ThemeToggle />
             <SignOutButton />
