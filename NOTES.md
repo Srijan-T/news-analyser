@@ -75,6 +75,14 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - `services/analyses.analyze_article`: returns the stored analysis if there is one (no AI call). Otherwise it analyzes, stores and commits. A unique-constraint race keeps the first.
 - Frontend: `ArticleDetail.tsx` (panel plus analyze mutation), `SentimentBadge.tsx`. The selected article is `?article=` in the URL.
 
+## Batch analysis (`services/batches.py`, `routers/batches.py`, `components/SearchResults.tsx`)
+
+- `create_batch` checks every id exists (404 with `missing_ids` otherwise) and stores one `AnalysisBatchItem` per article, marking already-analyzed ones `skipped`.
+- The route schedules `BatchRunner.run` as a FastAPI background task, which runs after the 202 is sent. The runner reads the pending items and processes them with up to `WORKERS = 3` threads. Each thread opens its **own session** (sessions aren't thread-safe), marks the item `running`, calls `analyses.analyze_article` (so the per-article row lock still prevents double AI calls), then marks it `done`/`skipped`/`failed` with the error code.
+- Status isn't stored on the batch; it's derived from the items. `item_state()` reports items unfinished for over `STALE_AFTER` (10 min) as `failed`/`interrupted`. The GET never writes.
+- Tests override `get_batch_runner` with `workers=1` and the test session (same code, run inline). One test uses the real threaded runner with committed rows.
+- Frontend: `SearchResults` holds the checkbox selection and the batch id, polls `GET /api/analysis-batches/{id}` every second until `done`, and patches each finished analysis into the cached search so the cards update live. When the batch is done it shows a summary toast and invalidates `article`, `history` and `stats`.
+
 ## Forgiving search (`services/query_fix.py`, `run_search` in `services/searches.py`)
 
 - Only when the first search finds nothing (and `exact` is false), `_fallbacks()` tries the corrector's suggestion, then `broaden()` ("a OR b"). `_ProviderCalls` counts every call into `provider_requests`, stops at the remaining daily budget, and sleeps `NEWS_MIN_REQUEST_INTERVAL` between calls.

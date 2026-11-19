@@ -11,7 +11,7 @@ Search recent news on any topic, get an **AI summary and sentiment** for the art
 Built for a busy reader keeping tabs on a topic, such as a company, a sector or a story, who wants the gist and the tone of coverage quickly.
 
 1. **Search** recent news by keyword, sorted by relevance or date, optionally within the past 24 hours, week or month. Results are stored, so refreshing or sharing a link reopens the same results without spending API quota.
-2. **Analyze** any article with one click. The AI returns a one-sentence TL;DR, key points, a sentiment (positive / neutral / negative) with a score from −1 to 1, the reason for that sentiment, and up to two **quotes from the article** as evidence.
+2. **Analyze** any article with one click, or tick several (up to 10) and analyze them together in the background, with progress shown per article. The AI returns a one-sentence TL;DR, key points, a sentiment (positive / neutral / negative) with a score from −1 to 1, the reason for that sentiment, and up to two **quotes from the article** as evidence.
 3. **Everything is stored** in Postgres: searches, articles and analyses.
 4. **History** shows every analyzed article with filters (sentiment, source, search, date) and a summary strip: counts per sentiment and the average score for whatever is filtered.
 
@@ -47,6 +47,7 @@ flowchart LR
 | **The model's output is checked, not trusted** | The score is clamped and the lists are capped. Evidence quotes are kept **only if they appear verbatim in the article**. Postgres CHECK constraints back this up. A refusal or invalid output returns an honest 502; there's never a fabricated result. | Some real quotes get dropped if the model paraphrases them. |
 | **No LLM "confidence" score** | Self-reported confidence isn't calibrated and overlaps with the score. Evidence quotes make the sentiment checkable instead. | Less of a single "how sure" number to show. |
 | **Forgiving search** (only when a search finds nothing) | Retry once with a typo-corrected query, then once with "match any word" (at most 3 GNews calls, all counted against the quota and spaced out for GNews's 1 request/second limit). Typos are fixed by a free local spell-checker when it's confident, and by gpt-6-luna otherwise (it knows names: "nvdia" → "nvidia", not "nadia"). The banner says what ran, with "Search instead for…". Stored articles are also fuzzy-matched in Postgres (`pg_trgm`) at no quota cost. | A typo'd search can use up to 3 of the 95 daily requests. Searches that already return results are never second-guessed. |
+| **Batch analysis as a server job + polling** | `POST /api/analysis-batches` returns **202 Accepted** with a `Location` to poll. Three worker threads run the analyses, each through the same per-article row lock, so a batch and a single "Analyze" click never pay twice for one article. Cards fill in as each analysis lands. Batches are capped at 10 to bound one request's AI spend. | The job runs in-process (FastAPI `BackgroundTasks`), so a restart mid-batch loses it. Leftover items are reported as `interrupted` after 10 minutes instead of hanging. A real queue (RQ or Celery with Redis) would add retries and survive restarts. |
 | **Each article analyzed once** | Asking again returns the stored analysis (200) without calling the AI. | Re-running (e.g. after a prompt change) isn't in the UI yet. |
 | **Password sign-in page**, not HTTP basic auth | Basic auth's browser pop-up doesn't appear in embedded browsers or link previews. Visitors saw raw JSON. A form plus an HMAC-signed, HttpOnly cookie works everywhere, with no server-side session store. | One shared password, with no per-user accounts or audit trail. |
 | **Migrations run at container start**, not as a Railway pre-deploy step | Railway's private network (where Postgres lives) is only guaranteed at runtime. A failed migration still stops the server starting, so the health check keeps the old deploy serving. | With several replicas, each would try to migrate at startup. That would need a migration job or an advisory lock to scale. |
@@ -73,7 +74,8 @@ Each item below has its own PR or commit, with a test where the bug could be rep
 ## Limitations and what I'd do with more time
 
 - **Full article text:** a paid news plan, or a provider with a details endpoint, would let analyses read the whole article. `text_source` is already stored for that.
-- **Re-run and delete an analysis** (e.g. after a prompt change). Also: per-topic sentiment over time, multi-select "analyze all" (which would move to `202 Accepted` and polling), and streaming the analysis as it's generated.
+- **Re-run and delete an analysis** (e.g. after a prompt change). Also: per-topic sentiment over time, and streaming the analysis as it's generated.
+- **A durable job queue** (RQ or Celery) for batch analysis, with retries for failed items and jobs that survive a restart.
 - **Top headlines** as the empty state of the search page.
 - **An end-to-end browser test** (Playwright, using the fake providers) of search → analyze → history in CI. Today the UI is checked by hand in a browser for each PR.
 - **Frontend unit tests:** the frontend has lint and type checks, but no unit tests yet.
@@ -149,6 +151,8 @@ Interactive docs: `/docs` (OpenAPI). Main endpoints:
 | `GET /api/stats?<same filters>` | Counts per sentiment, average score, and the sources list. Uses the **same** filter code as `/api/articles`, so the numbers always match the list. |
 | `GET /api/articles/{id}` | An article with its analysis (`null` until analyzed). |
 | `POST /api/articles/{id}/analysis` | AI summary + sentiment. **201** = new; **200** = already analyzed, so the AI isn't called again. **502** if the AI fails (nothing stored). |
+| `POST /api/analysis-batches` `{article_ids}` | Analyze 1–10 articles in the background. **202** with a `Location` header to poll; already-analyzed articles are `skipped`. **404** if any id doesn't exist (listed in `details.missing_ids`; nothing stored), **422** for an empty, too long or repeated list. |
+| `GET /api/analysis-batches/{id}` | Batch progress: `status` (`running`/`done`), `counts`, and per article `status` (`pending`/`running`/`done`/`skipped`/`failed`), `error_code` and the finished `analysis`. |
 | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/session` | Sign-in. |
 | `GET /api/health` | App and database health. |
 
