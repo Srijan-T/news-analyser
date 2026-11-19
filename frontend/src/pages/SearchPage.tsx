@@ -5,6 +5,7 @@ import type { NewsSearchParams } from '../api/types.ts'
 import { ArticleCard, ArticleCardSkeleton } from '../components/ArticleCard.tsx'
 import { ArticleDetail } from '../components/ArticleDetail.tsx'
 import { EarlierMatches } from '../components/EarlierMatches.tsx'
+import { ExampleTopics } from '../components/ExampleTopics.tsx'
 import { QuotaBadge } from '../components/QuotaBadge.tsx'
 import { RecentSearches } from '../components/RecentSearches.tsx'
 import { SEARCH_NOTICE_ID, SearchNotice } from '../components/SearchNotice.tsx'
@@ -154,9 +155,7 @@ export function SearchPage() {
             )}
           </div>
         ) : !search ? (
-          <p className="text-sm text-muted">
-            Enter a topic above, or reopen a recent search.
-          </p>
+          <ExampleTopics onPick={(q) => create.mutate({ q, sort: 'latest', period: null })} />
         ) : search.items.length === 0 ? (
           <div className="space-y-6">
             <p className="text-sm text-muted">
