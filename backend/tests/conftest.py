@@ -12,7 +12,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 os.environ["NEWS_PROVIDER"] = "fake"
-for name in ("GNEWS_API_KEY", "APP_PASSWORD", "SESSION_SECRET", "STATIC_DIR"):
+os.environ["ANALYZER"] = "fake"
+for name in ("GNEWS_API_KEY", "OPENAI_API_KEY", "APP_PASSWORD", "SESSION_SECRET", "STATIC_DIR"):
     os.environ[name] = ""
 
 # Tests run against a separate database (created by docker-compose; a service in CI).

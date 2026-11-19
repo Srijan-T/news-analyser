@@ -144,7 +144,11 @@ def get_search(db: Session, search_id: int) -> Search | None:
     return db.scalars(
         select(Search)
         .where(Search.id == search_id)
-        .options(selectinload(Search.results).selectinload(SearchResult.article))
+        .options(
+            selectinload(Search.results)
+            .selectinload(SearchResult.article)
+            .selectinload(Article.analysis)  # one query for all analyses, not one per article
+        )
     ).first()
 
 

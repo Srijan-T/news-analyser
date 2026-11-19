@@ -1,7 +1,7 @@
 // Thin typed wrapper around fetch. Every backend error has the shape
 // {"error": {"code", "message", "details"}}, which we turn into an ApiError.
 
-import type { NewsSearchParams, Quota, Search, SearchPage } from './types.ts'
+import type { Analysis, Article, NewsSearchParams, Quota, Search, SearchPage } from './types.ts'
 
 export class ApiError extends Error {
   readonly status: number
@@ -75,4 +75,9 @@ export const api = {
   getSearch: (id: number) => apiFetch<Search>(`/searches/${id}`),
   listSearches: (limit = 10) => apiFetch<SearchPage>(`/searches?limit=${limit}`),
   quota: () => apiFetch<Quota>('/quota'),
+
+  getArticle: (id: number) => apiFetch<Article>(`/articles/${id}`),
+  /** Analyzes once; asking again returns the stored analysis without calling the AI. */
+  analyzeArticle: (id: number) =>
+    apiFetch<Analysis>(`/articles/${id}/analysis`, { method: 'POST' }),
 }

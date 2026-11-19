@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { ApiError, api } from '../api/client.ts'
 import type { NewsSearchParams } from '../api/types.ts'
 import { ArticleCard, ArticleCardSkeleton } from '../components/ArticleCard.tsx'
+import { ArticleDetail } from '../components/ArticleDetail.tsx'
 import { QuotaBadge } from '../components/QuotaBadge.tsx'
 import { RecentSearches } from '../components/RecentSearches.tsx'
 import { SearchForm } from '../components/SearchForm.tsx'
@@ -28,15 +29,17 @@ function errorMessage(error: Error): string {
 
 /** The URL holds the stored search's id (?search=42), so refresh, back/forward and shared
  * links reopen the same results without calling the news API again. */
-function readSearchId(sp: URLSearchParams): number | null {
-  const id = Number(sp.get('search'))
+function readId(sp: URLSearchParams, name: string): number | null {
+  const id = Number(sp.get(name))
   return Number.isInteger(id) && id > 0 ? id : null
 }
 
 export function SearchPage() {
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
-  const searchId = readSearchId(searchParams)
+  const searchId = readId(searchParams, 'search')
+  // The selected article is in the URL too (?search=1&article=5), so it survives refresh.
+  const articleId = readId(searchParams, 'article')
 
   const stored = useQuery({
     queryKey: ['search', searchId],
@@ -67,8 +70,10 @@ export function SearchPage() {
   const error = create.error ?? (searchId !== null ? stored.error : null)
 
   return (
-    <div className="grid grid-cols-[14rem_1fr] gap-8">
-      <aside>
+    // Desktop-first: three columns from 1024px; below that, one column (results, then the
+    // selected article, then history) so phones and tablets never scroll sideways.
+    <div className="grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)_20rem] xl:grid-cols-[13rem_minmax(0,1fr)_24rem]">
+      <aside className="order-last lg:order-none">
         <RecentSearches currentId={searchId} />
       </aside>
 
@@ -123,11 +128,28 @@ export function SearchPage() {
               plan, so articles can be up to ~12 hours old
             </p>
             {search.items.map((article) => (
-              <ArticleCard key={article.id} article={article} />
+              <ArticleCard
+                key={article.id}
+                article={article}
+                selected={article.id === articleId}
+                onSelect={() =>
+                  setSearchParams({ search: String(search.id), article: String(article.id) })
+                }
+              />
             ))}
           </div>
         )}
       </section>
+
+      <aside className="lg:sticky lg:top-6 lg:self-start">
+        {articleId !== null ? (
+          <ArticleDetail key={articleId} articleId={articleId} searchId={searchId} />
+        ) : search && search.items.length > 0 ? (
+          <p className="rounded-lg border border-dashed border-slate-300 p-5 text-sm text-slate-500">
+            Select an article's headline to see its AI summary and sentiment.
+          </p>
+        ) : null}
+      </aside>
     </div>
   )
 }

@@ -12,6 +12,9 @@ from sqlalchemy.engine import Engine
 
 from app.config import Settings
 from app.main import create_app
+from app.services.ai import get_analyzer
+from app.services.ai.base import AnalyzerResult, ArticleText
+from app.services.ai.fake import FakeAnalyzer
 from app.services.news import get_news_provider
 from app.services.news.base import NormalizedArticle, SearchParams
 from app.services.news.fake import FakeNewsProvider
@@ -37,7 +40,8 @@ class SlowProvider(FakeNewsProvider):
 def committed_tables(engine: Engine) -> Iterator[None]:
     yield
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE searches, articles, search_results"))
+        # CASCADE also clears tables that reference these (e.g. analyses).
+        conn.execute(text("TRUNCATE searches, articles, search_results CASCADE"))
 
 
 def test_concurrent_searches_cannot_exceed_the_daily_quota(committed_tables: None) -> None:
@@ -58,3 +62,41 @@ def test_concurrent_searches_cannot_exceed_the_daily_quota(committed_tables: Non
 
     assert provider.calls == 1  # the quota of 1 was never exceeded
     assert sorted(statuses) == [201, 429]
+
+
+class SlowAnalyzer(FakeAnalyzer):
+    """Slow enough that two analyze requests for the same article overlap."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self._lock = threading.Lock()
+
+    def analyze(self, article: ArticleText) -> AnalyzerResult:
+        with self._lock:
+            self.calls += 1
+        time.sleep(0.5)
+        return super().analyze(article)
+
+
+def test_concurrent_analyze_requests_call_the_ai_once(committed_tables: None) -> None:
+    analyzer = SlowAnalyzer()
+    app = create_app(Settings())
+    app.dependency_overrides[get_news_provider] = FakeNewsProvider
+    app.dependency_overrides[get_analyzer] = lambda: analyzer
+    client = TestClient(app)
+    article_id = client.post("/api/searches", json={"q": "anthropic"}).json()["items"][0]["id"]
+    responses: list[dict[str, object]] = []
+
+    def run() -> None:
+        res = client.post(f"/api/articles/{article_id}/analysis")
+        responses.append({"status": res.status_code, "id": res.json()["id"]})
+
+    threads = [threading.Thread(target=run) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert analyzer.calls == 1  # tokens spent once
+    assert sorted(r["status"] for r in responses) == [200, 201]  # type: ignore[type-var]
+    assert responses[0]["id"] == responses[1]["id"]

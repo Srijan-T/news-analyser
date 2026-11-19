@@ -5,6 +5,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.services.ai.base import Sentiment
 from app.services.news.base import Period, SortOrder
 
 Query = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -14,6 +15,23 @@ class CreateSearch(BaseModel):
     q: Query = Field(description="Search terms (GNews query syntax)")
     sort: SortOrder = "latest"
     period: Period | None = None
+
+
+class AnalysisOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    article_id: int
+    tldr: str
+    key_points: list[str]
+    sentiment: Sentiment
+    score: float = Field(description="-1 (very negative) to 1 (very positive)")
+    rationale: str
+    evidence: list[str] = Field(description="Short quotes copied from the article text")
+    text_source: str = Field(description='"snippet" when only the article opening was available')
+    model: str
+    prompt_version: str
+    created_at: datetime
 
 
 class ArticleOut(BaseModel):
@@ -28,6 +46,7 @@ class ArticleOut(BaseModel):
     source_name: str
     source_url: str | None
     published_at: datetime
+    analysis: AnalysisOut | None = None
 
 
 class SearchSummary(BaseModel):

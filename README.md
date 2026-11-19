@@ -26,6 +26,14 @@ make dev     # starts Postgres (port 5433), applies migrations, runs backend + f
 
 By default the backend uses `NEWS_PROVIDER=fake`, which replays a saved GNews response, so local development spends none of the API quota. For live news, set `NEWS_PROVIDER=gnews` and `GNEWS_API_KEY` in `backend/.env`.
 
+## AI analysis
+
+- **One OpenAI call per article**, using Structured Outputs: the SDK returns a validated pydantic object (`AnalysisDraft`), so there's no JSON parsing. It produces a one-sentence TL;DR, up to 3 key points, sentiment (positive/neutral/negative), a score from −1 to 1, a one-line rationale, and up to 2 evidence quotes.
+- **We don't trust the model blindly.** The score is clamped, and the lists are capped. Evidence quotes are kept only if they appear **verbatim in the article text**, so the UI never shows an invented quote. Postgres CHECK constraints guard sentiment and score as well.
+- **No self-reported "confidence".** LLM confidence numbers aren't calibrated and overlap with the score. Instead, the evidence quotes let a reader check the sentiment, and a note says when the analysis is based on the article's opening only (the GNews free plan gives ~250 characters).
+- **Traceable:** each analysis stores the model, `PROMPT_VERSION` (bumped whenever `prompts.py` changes) and token usage.
+- **Failures are honest:** a refusal or invalid output returns 502 `ai_output_invalid` and nothing is stored. There's never a made-up fallback result.
+
 ## News source
 
 [GNews](https://gnews.io): its free plan gives keyword search, 100 requests/day, articles about 12 hours behind real time, and a ~250-character snippet per article. The UI says so next to the results.
@@ -66,6 +74,7 @@ Production environment variables (set in Railway, never committed):
 | `APP_PASSWORD`, `SESSION_SECRET` | Puts the app behind a sign-in page (one shared password) so strangers can't spend the API quotas. `SESSION_SECRET` signs the session cookie. `/api/health` stays open for Railway's health check. |
 | `DATABASE_URL` | Railway Postgres connection string (a reference variable). `postgresql://` URLs are converted to the psycopg driver automatically. |
 | `NEWS_DAILY_REQUEST_LIMIT` | New searches allowed per UTC day (default 95; GNews free is 100) |
+| `ANALYZER=openai`, `OPENAI_API_KEY`, `OPENAI_MODEL` | AI analysis (model defaults to `gpt-6-luna`). Locally `ANALYZER=fake` analyzes offline without spending tokens. |
 | `PORT` | Injected by Railway; defaults to 8000 |
 
 ## API
@@ -78,6 +87,8 @@ Interactive docs: `/docs` (OpenAPI). Main endpoints:
 | `GET /api/searches?limit&offset` | Search history, newest first (with `total`). |
 | `GET /api/searches/{id}` | A stored search with its articles. Never calls the news API. |
 | `GET /api/quota` | News-API requests used and left today (resets 00:00 UTC). |
+| `GET /api/articles/{id}` | An article with its analysis (`null` until analyzed). |
+| `POST /api/articles/{id}/analysis` | AI summary + sentiment. **201** = new; **200** = already analyzed, so the AI isn't called again. **502** if the AI fails (nothing stored). |
 | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/session` | Sign-in. |
 | `GET /api/health` | App and database health. |
 
