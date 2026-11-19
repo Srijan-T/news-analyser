@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from app.auth import SessionAuthMiddleware
 from app.config import Settings, get_settings
+from app.db import make_engine, make_session_factory
 from app.errors import register_error_handlers
 from app.routers import auth, health, news
 from app.spa import mount_spa
@@ -18,6 +19,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version="0.1.0",
     )
     app.state.settings = settings
+    # create_engine doesn't connect yet; the first request (or health check) does.
+    app.state.session_factory = make_session_factory(make_engine(settings.database_url))
     register_error_handlers(app)
     app.include_router(health.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")

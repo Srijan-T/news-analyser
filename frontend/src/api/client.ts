@@ -50,7 +50,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return body as T
 }
 
-export type Health = { status: string }
+export type Health = { status: string; database: string }
 export type Session = { auth_required: boolean; authenticated: boolean }
 
 /** TanStack Query cache key for the session; invalidate it to re-check sign-in. */
