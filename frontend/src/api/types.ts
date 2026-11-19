@@ -64,3 +64,33 @@ export type Quota = {
   used: number
   remaining: number | null
 }
+
+export type ArticleSort =
+  | 'published_desc'
+  | 'published_asc'
+  | 'analyzed_desc'
+  | 'score_desc'
+  | 'score_asc'
+
+/** History filters as the UI holds them (and as they appear in the URL). */
+export type HistoryFilters = {
+  sentiment: Sentiment | null
+  source: string | null
+  searchId: number | null
+  within: Period | null // published within the last 24h / 7d / 30d
+  sort: ArticleSort
+}
+
+export type ArticlePage = {
+  items: Article[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export type Stats = {
+  total: number
+  by_sentiment: Record<Sentiment, number>
+  average_score: number | null
+  sources: string[]
+}

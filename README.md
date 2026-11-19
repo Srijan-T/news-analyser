@@ -87,6 +87,8 @@ Interactive docs: `/docs` (OpenAPI). Main endpoints:
 | `GET /api/searches?limit&offset` | Search history, newest first (with `total`). |
 | `GET /api/searches/{id}` | A stored search with its articles. Never calls the news API. |
 | `GET /api/quota` | News-API requests used and left today (resets 00:00 UTC). |
+| `GET /api/articles?analyzed&sentiment&source&search_id&published_from&published_to&sort&limit&offset` | Stored articles with their analyses, filtered and sorted (with `total`). |
+| `GET /api/stats?<same filters>` | Counts per sentiment, average score, and the sources list. Uses the **same** filter code as `/api/articles`, so the numbers always match the list. |
 | `GET /api/articles/{id}` | An article with its analysis (`null` until analyzed). |
 | `POST /api/articles/{id}/analysis` | AI summary + sentiment. **201** = new; **200** = already analyzed, so the AI isn't called again. **502** if the AI fails (nothing stored). |
 | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/session` | Sign-in. |

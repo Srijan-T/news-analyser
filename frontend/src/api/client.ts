@@ -1,7 +1,17 @@
 // Thin typed wrapper around fetch. Every backend error has the shape
 // {"error": {"code", "message", "details"}}, which we turn into an ApiError.
 
-import type { Analysis, Article, NewsSearchParams, Quota, Search, SearchPage } from './types.ts'
+import type {
+  Analysis,
+  Article,
+  ArticlePage,
+  HistoryFilters,
+  NewsSearchParams,
+  Quota,
+  Search,
+  SearchPage,
+  Stats,
+} from './types.ts'
 
 export class ApiError extends Error {
   readonly status: number
@@ -51,6 +61,20 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 }
 
 export type Health = { status: string; database: string }
+
+const PERIOD_MS = { '24h': 864e5, '7d': 7 * 864e5, '30d': 30 * 864e5 } as const
+
+/** Query string shared by /articles and /stats, so the list and the stats always match. */
+function historyQuery(filters: HistoryFilters): URLSearchParams {
+  const params = new URLSearchParams({ analyzed: 'true' })
+  if (filters.sentiment) params.set('sentiment', filters.sentiment)
+  if (filters.source) params.set('source', filters.source)
+  if (filters.searchId !== null) params.set('search_id', String(filters.searchId))
+  if (filters.within) {
+    params.set('published_from', new Date(Date.now() - PERIOD_MS[filters.within]).toISOString())
+  }
+  return params
+}
 export type Session = { auth_required: boolean; authenticated: boolean }
 
 /** TanStack Query cache key for the session; invalidate it to re-check sign-in. */
@@ -75,6 +99,15 @@ export const api = {
   getSearch: (id: number) => apiFetch<Search>(`/searches/${id}`),
   listSearches: (limit = 10) => apiFetch<SearchPage>(`/searches?limit=${limit}`),
   quota: () => apiFetch<Quota>('/quota'),
+
+  listArticles: (filters: HistoryFilters, limit: number, offset: number) => {
+    const params = historyQuery(filters)
+    params.set('sort', filters.sort)
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+    return apiFetch<ArticlePage>(`/articles?${params}`)
+  },
+  stats: (filters: HistoryFilters) => apiFetch<Stats>(`/stats?${historyQuery(filters)}`),
 
   getArticle: (id: number) => apiFetch<Article>(`/articles/${id}`),
   /** Analyzes once; asking again returns the stored analysis without calling the AI. */

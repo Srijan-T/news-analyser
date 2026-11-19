@@ -77,3 +77,23 @@ class QuotaOut(BaseModel):
     limit: int | None = Field(description="Daily limit; null when the provider has none")
     used: int
     remaining: int | None
+
+
+class ArticlePage(BaseModel):
+    items: list[ArticleOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class SentimentCounts(BaseModel):
+    positive: int
+    neutral: int
+    negative: int
+
+
+class StatsOut(BaseModel):
+    total: int = Field(description="Analyzed articles matching the filters")
+    by_sentiment: SentimentCounts
+    average_score: float | None = Field(description="Mean score; null when nothing matches")
+    sources: list[str] = Field(description="Every source with an analysis (for filter menus)")
