@@ -88,12 +88,21 @@ export function HistoryPage() {
   const filtered = Object.entries(filters).some(([k, v]) => k !== 'sort' && v !== null)
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+    // The detail column only exists while an article is open; until then the list is centred
+    // at a readable width instead of leaving an empty column on the right.
+    <div
+      className={
+        articleId !== null
+          ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_24rem]'
+          : 'mx-auto max-w-4xl'
+      }
+    >
       <section className="min-w-0 space-y-5">
         <div>
           <h1 className="text-2xl font-semibold">Analysis history</h1>
           <p className="mt-1 text-soft">
-            Every article you've analyzed, with its sentiment. Filter to see how coverage leans.
+            Every article you've analyzed, with its sentiment. Filter to see how coverage leans,
+            and select a headline for its full analysis.
           </p>
         </div>
 
@@ -233,15 +242,11 @@ export function HistoryPage() {
         )}
       </section>
 
-      <aside className="lg:sticky lg:top-6 lg:self-start">
-        {articleId !== null ? (
+      {articleId !== null && (
+        <aside className="lg:sticky lg:top-6 lg:self-start">
           <ArticleDetail key={articleId} articleId={articleId} searchId={null} />
-        ) : list.data && list.data.items.length > 0 ? (
-          <p className="rounded-lg border border-dashed border-line-strong p-5 text-sm text-muted">
-            Select a headline to see its full analysis.
-          </p>
-        ) : null}
-      </aside>
+        </aside>
+      )}
     </div>
   )
 }
