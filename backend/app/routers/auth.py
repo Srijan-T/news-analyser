@@ -1,5 +1,5 @@
+import asyncio
 import hmac
-import time
 
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, Field
@@ -44,13 +44,15 @@ def session(request: Request) -> SessionResponse:
     summary="Sign in with the shared password",
     responses={401: {"description": "Wrong password"}},
 )
-def login(body: LoginRequest, request: Request, response: Response) -> None:
+async def login(body: LoginRequest, request: Request, response: Response) -> None:
     settings = _settings(request)
     if settings.app_password is None or settings.session_secret is None:
         return  # sign-in disabled: nothing to do
     expected = settings.app_password.get_secret_value().encode()
     if not hmac.compare_digest(body.password.encode(), expected):
-        time.sleep(FAILED_LOGIN_DELAY_SECONDS)
+        # Awaited, not time.sleep: a blocking sleep would hold one of the shared worker
+        # threads per wrong guess, so parallel guesses could stall every other request.
+        await asyncio.sleep(FAILED_LOGIN_DELAY_SECONDS)
         raise AppError(401, "invalid_password", "That password isn't right")
     response.set_cookie(
         COOKIE_NAME,

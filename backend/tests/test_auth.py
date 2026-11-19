@@ -118,3 +118,17 @@ def test_expired_cookie_is_rejected(client: TestClient) -> None:
 def test_malformed_cookie_is_rejected(client: TestClient, value: str) -> None:
     client.cookies.set(COOKIE_NAME, value)
     assert client.get(PROTECTED).status_code == 401
+
+
+def test_failed_login_delay_does_not_block_a_worker_thread(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """time.sleep in a sync route holds one of FastAPI's shared worker threads, so parallel
+    wrong guesses could stall every other request. The delay must be awaited instead."""
+
+    def blocking_sleep(_: float) -> None:
+        raise AssertionError("failed login used blocking time.sleep")
+
+    monkeypatch.setattr("time.sleep", blocking_sleep)
+
+    assert login(client, "nope").status_code == 401
