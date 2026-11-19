@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     news_provider: Literal["gnews", "fake"] = "fake"
     gnews_api_key: SecretStr | None = None
 
+    # Local default: the docker-compose Postgres (port 5433). Railway injects DATABASE_URL.
+    database_url: str = "postgresql+psycopg://app:app@localhost:5433/news_analyser"
+
     # Built frontend (Vite's dist/). Set in Docker so FastAPI serves the app; unset in dev,
     # where Vite serves it instead.
     static_dir: Path | None = None
@@ -25,6 +28,16 @@ class Settings(BaseSettings):
     # SESSION_SECRET signs the session cookie; required whenever APP_PASSWORD is set.
     app_password: SecretStr | None = None
     session_secret: SecretStr | None = None
+
+    @field_validator("database_url")
+    @classmethod
+    def use_psycopg_driver(cls, value: str) -> str:
+        """Railway gives postgresql://... (and some hosts postgres://...); SQLAlchemy needs
+        the driver named explicitly to use psycopg 3."""
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value.removeprefix(prefix)
+        return value
 
     @field_validator("static_dir", "app_password", "session_secret", mode="before")
     @classmethod

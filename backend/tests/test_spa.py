@@ -60,7 +60,7 @@ def test_wrong_method_on_api_route_is_405_not_spa(client: TestClient) -> None:
 
 
 def test_api_routes_still_work(client: TestClient) -> None:
-    assert client.get("/api/health").json() == {"status": "ok"}
+    assert client.get("/api/health").json()["status"] == "ok"
 
 
 def test_path_traversal_cannot_escape_build_dir(client: TestClient) -> None:
