@@ -24,6 +24,14 @@ make dev
 - App: http://localhost:5173 (Vite forwards `/api` requests to the backend)
 - API docs: http://localhost:8000/docs
 
+By default the backend uses `NEWS_PROVIDER=fake`, which replays a saved GNews response, so local development spends none of the API quota. For live news, set `NEWS_PROVIDER=gnews` and `GNEWS_API_KEY` in `backend/.env`.
+
+## News source
+
+[GNews](https://gnews.io): its free plan gives keyword search, 100 requests/day, articles about 12 hours behind real time, and a ~250-character snippet per article. The UI says so next to the results.
+
+I first evaluated **FreeNewsAPI.io**, which advertises real-time articles and full article text. A live probe showed that its keyword search had been removed (`q` returns "Search using the 'q' field has been removed."), and its title search returned HTTP 500. Since searching is the core of the brief, I rejected it. Providers sit behind a `NewsProvider` interface, so adding a full-text source later is one new class.
+
 ## Checks
 
 ```bash

@@ -1,0 +1,170 @@
+{
+  "information": {
+    "realTimeArticles": {
+      "message": "On the Free plan, articles arrive with a 12-hour delay. Paid plans return them in real time: https://gnews.io/pricing"
+    }
+  },
+  "totalArticles": 45851,
+  "articles": [
+    {
+      "id": "d29cdcc46d48017523e4c5de64e20c0f",
+      "title": "Anthropic eyes historic listing: Here's a look at the 'Fab 7' co founders of the AI behemoth",
+      "description": "Roughly six years after quitting OpenAI to launch a rival to ChatGPT, the seven founders — spanning a college dropout, three PhDs and a former reporter — are each expected to sell about $250 million in shares.",
+      "content": "Roughly six years after quitting OpenAI to launch a rival to ChatGPT, the seven founders — spanning a college dropout, three PhDs, a former reporter and siblings who once fought over stolen toys — are each expected to sell about $250 million in share... [5836 chars]",
+      "url": "https://www.businesstoday.in/world/story/anthropic-eyes-historic-listing-heres-a-look-at-the-fab-7-co-founders-of-the-ai-behemoth-568301-2026-11-19",
+      "image": "https://akm-img-a-in.tosshub.com/businesstoday/images/story/202611/6afe5fb6af2e6-from-top-left-side-daniela-amodei--christopher-olah--tom-brown--dario-amodei--jack-clark--jared-ka-193221687-16x9.png",
+      "publishedAt": "2026-11-19T02:34:44Z",
+      "lang": "en",
+      "source": {
+        "id": "76a2f820b104591b97fed1b0932cec38",
+        "name": "Business Today",
+        "url": "https://www.businesstoday.in",
+        "country": "in"
+      }
+    },
+    {
+      "id": "0acc9bb66fe3ab6fd561c0b6b9716cd2",
+      "title": "Arizona says it is investigating OpenAI, other firms over possible rogue agents",
+      "description": "The state of Arizona has opened a criminal investigation into OpenAI and other AI companies relating to the \"apparent infiltration of banks by rogue AI agents,\" Arizona Attorney General Kris Mayes said Wednesday. A criminal investigation does not necessarily mean charges will be brought. Mayes said her office was investigating whether Arizona state law was being violated on an ongoing basis.",
+      "content": "Synopsis\nThe state of Arizona has opened a criminal investigation into OpenAI and other AI companies relating to the \"apparent infiltration of banks by rogue AI agents,\" Arizona Attorney General Kris Mayes said Wednesday. A criminal investigation doe... [1977 chars]",
+      "url": "https://economictimes.indiatimes.com/tech/artificial-intelligence/arizona-says-it-is-investigating-openai-other-firms-over-possible-rogue-agents/articleshow/135975459.cms",
+      "image": "https://img.etimg.com/thumb/width-1200,height-900,imgsize-4021322,resizemode-75,msid-135975459/tech/artificial-intelligence/arizona-says-it-is-investigating-openai-other-firms-over-possible-rogue-agents.jpg",
+      "publishedAt": "2026-11-19T02:13:49Z",
+      "lang": "en",
+      "source": {
+        "id": "5464668c1f0466950a0b2fab5249ec6c",
+        "name": "The Economic Times",
+        "url": "https://economictimes.indiatimes.com",
+        "country": "in"
+      }
+    },
+    {
+      "id": "7b23e424990cb9e5126ac5e21ceb31f3",
+      "title": "Palo Alto Networks agrees to buy AI startup Applied Compute for $4.5 billion in stock",
+      "description": "Palo Alto Networks will buy Applied Compute, an open-weight AI startup from ex-OpenAI researchers, for $4.5 billion in stock, as quarterly results beat.",
+      "content": "The startup's CEO will become Palo Alto's co-chief AI officer once the deal closes, expected in fiscal Q3 2027.\nBy Marcus Rodriguez · Nov 18, 2026, 8:46 PM EST\nWhy it matters: Arora says the bet could dwarf Palo Alto's cybersecurity business if it wo... [2604 chars]",
+      "url": "https://sainteur.com/article/palo-alto-networks-agrees-to-buy-ai-startup-applied-compute-for-4-5-billion-in",
+      "image": "https://api.sainteur.com/functions/v1/seo-feeds/img/00ea7bc7-62b1-4b89-a1ac-a5241be79226/4f133206-5028-47c5-b860-076a6dd945db.png",
+      "publishedAt": "2026-11-19T01:46:49Z",
+      "lang": "en",
+      "source": {
+        "id": "787ee07e146d5c27ede077ebddfb7b2d",
+        "name": "Sainteur",
+        "url": "https://sainteur.com",
+        "country": "us"
+      }
+    },
+    {
+      "id": "baa90d541692dab045de2da5ba095579",
+      "title": "Arizona Investigates OpenAI, Other AI Firms Over Possible Rogue Agents",
+      "description": "The banking industry has become increasingly concerned that sophisticated AI agents could harm the banking system and the institutions trusted to hold people's wealth.",
+      "content": "Chicago:\nThe state of Arizona has opened a criminal investigation into OpenAI and other AI companies relating to the \"apparent infiltration of banks by rogue AI agents,\" Arizona Attorney General Kris Mayes said Wednesday.\nA criminal investigation doe... [1538 chars]",
+      "url": "https://www.ndtv.com/world-news/arizona-investigates-openai-other-ai-firms-over-possible-rogue-agents-12346720",
+      "image": "https://c.ndtvimg.com/2026-10/qqkhbp3k_openai-reuters_625x300_30_October_26.jpeg?im=FeatureCrop,algorithm=dnn,width=1600,height=900",
+      "publishedAt": "2026-11-19T01:37:06Z",
+      "lang": "en",
+      "source": {
+        "id": "7daf04fa6272ed0a29583b211dcfe1d4",
+        "name": "NDTV.com",
+        "url": "https://www.ndtv.com",
+        "country": "in"
+      }
+    },
+    {
+      "id": "af10351730f0aa9c18f681ac593a3f69",
+      "title": "Arizona says it is investigating OpenAI, other firms over possible rogue agents",
+      "description": "CHICAGO, Nov 18 - The state of Arizona has opened a criminal investigation into OpenAI and other AI companies relating to the apparent infiltration of banks by rogue AI agents, Arizona Attorney...",
+      "content": "CHICAGO, Nov 18 (Reuters) - The state of Arizona has opened a criminal investigation into OpenAI and other AI companies relating to the \"apparent infiltration of banks by rogue AI agents,\" Arizona Attorney General Kris Mayes said Wednesday.\nA crimina... [1646 chars]",
+      "url": "https://www.marketscreener.com/news/arizona-says-it-is-investigating-openai-other-firms-over-possible-rogue-agents-ce785eddde88f52d",
+      "image": "https://cdn.zonebourse.com/static/resize/0/0//images/reuters/2026-03/2026-03-17T163611Z_1_LYNXMPEM2G11I_RTROPTP_4_USA-TRUMP-TARIFFS.JPG",
+      "publishedAt": "2026-11-19T01:33:29Z",
+      "lang": "en",
+      "source": {
+        "id": "20cff2bcbc7e0fce7e6182772a9e2a7e",
+        "name": "MarketScreener",
+        "url": "https://www.marketscreener.com",
+        "country": "fr"
+      }
+    },
+    {
+      "id": "97455b3ed509cf1f3940695680f13aad",
+      "title": "Can China's ByteDance access OpenAI models through Microsoft? US lawmakers want answers",
+      "description": "A reported $500 million Azure deal could give ByteDance access to OpenAI models, prompting US lawmakers to question Microsoft's role in China's AI ambitions",
+      "content": "A reported $500 million deal between Microsoft and China's ByteDance that could give the Chinese technology company access to OpenAI's artificial intelligence (AI) models through Microsoft's Azure cloud platform has come under scrutiny in Washington.... [3214 chars]",
+      "url": "https://www.firstpost.com/business/microsoft-bytedance-openai-models-us-lawmakers-ai-deal-14061100.html",
+      "image": "https://images.firstpost.com/uploads/2026/11/EXCLUSIVE-88-2026-11-0cb54cfdf1c49adb0434b55636b8e922-1200x675.jpg?im=FitAndFill,width=1200,height=675",
+      "publishedAt": "2026-11-19T01:22:13Z",
+      "lang": "en",
+      "source": {
+        "id": "a7ae5ecb2b2c41a3addf1d2e51ceb032",
+        "name": "Firstpost",
+        "url": "https://www.firstpost.com",
+        "country": "in"
+      }
+    },
+    {
+      "id": "db4dabb2e823b0f650efca9db11ab76a",
+      "title": "Watch the Biggest Interviews at the DealBook Summit",
+      "description": "See the full conversations with Prime Minister Mark Carney of Canada, OpenAI’s Sam Altman and Greg Brockman, Mayor Zohran Mamdani of New York, SpaceX’s Elon Musk and more.",
+      "content": "Advertisement\nSKIP ADVERTISEMENT\nWatch the Biggest Interviews at the DealBook Summit\nSee the full conversations with Prime Minister Mark Carney of Canada, OpenAI’s Sam Altman and Greg Brockman, Mayor Zohran Mamdani of New York, SpaceX’s Elon Musk and... [1606 chars]",
+      "url": "https://www.nytimes.com/2026/11/18/business/dealbook/watch-the-biggest-interviews-at-the-dealbook-summit.html",
+      "image": "https://static01.nyt.com/images/2026/11/18/multimedia/18db-mamdani-sorkin-stage-pqhf/18db-mamdani-sorkin-stage-pqhf-facebookJumbo.jpg",
+      "publishedAt": "2026-11-19T00:47:24Z",
+      "lang": "en",
+      "source": {
+        "id": "e553cce06d349ac1f7fbb7618a979256",
+        "name": "The New York Times",
+        "url": "https://www.nytimes.com",
+        "country": "us"
+      }
+    },
+    {
+      "id": "e9545a2951490910c9d7b07897239cf0",
+      "title": "'Artificial,' the OpenAI movie, hosts star-studded SF premiere",
+      "description": "Director Luca Guadagnino and stars Andrew Garfield, Cooper Hoffman and Monica Barbaro were in attendance.",
+      "content": "San Francisco continues its big year on the big screen with “Artificial,” a new film set in the Bay Area that chronicles the rise of OpenAI. On Tuesday night, SFFILM spotlighted the movie with its SF Honors Award, hosting an early screening at the Je... [3736 chars]",
+      "url": "https://www.sfgate.com/sf-culture/article/artificial-premiere-22538453.php",
+      "image": "https://s.hdnux.com/photos/01/67/76/50/31451667/3/rawImage.jpg",
+      "publishedAt": "2026-11-18T23:53:42Z",
+      "lang": "en",
+      "source": {
+        "id": "384b3c633f1aa3e0a1bcb208f94d519d",
+        "name": "SFGATE",
+        "url": "https://www.sfgate.com",
+        "country": "us"
+      }
+    },
+    {
+      "id": "a343b2cc089edc0df5477e3428cfe656",
+      "title": "US lawmakers seek Microsoft briefing on reported AI deal talks with ByteDance",
+      "description": "A United States House panel asked Microsoft on Wednesday (Nov 18) to brief lawmakers on a report which said the company could allow the Chinese firm ByteDance to use OpenAI models through Microsoft's Azure cloud platform.Technology news outlet the Information reported that Microsoft was nearing a US",
+      "content": "A United States House panel asked Microsoft on Wednesday (Nov 18) to brief lawmakers on a report which said the company could allow the Chinese firm ByteDance to use OpenAI models through Microsoft's Azure cloud platform.\nTechnology news outlet the I... [1443 chars]",
+      "url": "https://www.channelnewsasia.com/world/us-microsoft-bytedance-openai-access-6563751",
+      "image": "https://dam.mediacorp.sg/image/upload/s--RzaIeHS5--/c_fill,g_auto,h_676,w_1200/fl_relative,g_south_east,l_mediacorp:cna:watermark:2024-04:reuters_1,w_0.1/f_auto,q_auto/v1/one-cms/core/2026-11-13T090408Z_1_LYNXNPEMAC0MY_RTROPTP_3_DAVOS-MEETING.JPG?itok=0vj_HnTq",
+      "publishedAt": "2026-11-18T23:38:54Z",
+      "lang": "en",
+      "source": {
+        "id": "09131c39169c9c96230862dc4c1fa727",
+        "name": "CNA",
+        "url": "https://www.channelnewsasia.com",
+        "country": "sg"
+      }
+    },
+    {
+      "id": "a43fa5fe86afc5a6615a80e94b0e2b00",
+      "title": "Anthropic vs OpenAI vs SpaceX IPO: Three giants, three different bets for investors",
+      "description": "Anthropic's IPO aims to raise $64.35 billion, valuing the AI company at $1.4 trillion, positioning it alongside OpenAI and SpaceX in the race for AI and technology market dominance.",
+      "content": "The listing comes at a time when investors are increasingly looking at artificial intelligence companies\npotential long-term investment opportunities. It also puts Anthropic at the centre alongside its biggest rival, OpenAI, which is targeting a stoc... [8907 chars]",
+      "url": "https://www.financialexpress.com/market/global-markets/anthropic-vs-openai-vs-spacex-ipo-three-giants-three-different-bets-for-investors/4387894/",
+      "image": "https://images.financialexpressdigital.com/2026/11/pictures-2026-11-18T185656.332.jpg",
+      "publishedAt": "2026-11-18T23:32:30Z",
+      "lang": "en",
+      "source": {
+        "id": "63361c66f51ee0c82a5325ba1c7b8d06",
+        "name": "The Financial Express",
+        "url": "https://www.financialexpress.com",
+        "country": "in"
+      }
+    }
+  ]
+}

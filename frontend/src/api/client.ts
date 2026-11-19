@@ -1,6 +1,8 @@
 // Thin typed wrapper around fetch. Every backend error has the shape
 // {"error": {"code", "message", "details"}}, which we turn into an ApiError.
 
+import type { NewsSearchParams, NewsSearchResponse } from './types.ts'
+
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
@@ -47,4 +49,10 @@ export type Health = { status: string }
 
 export const api = {
   health: () => apiFetch<Health>('/health'),
+
+  searchNews: ({ q, sort, period }: NewsSearchParams) => {
+    const params = new URLSearchParams({ q, sort })
+    if (period) params.set('period', period)
+    return apiFetch<NewsSearchResponse>(`/news/search?${params}`)
+  },
 }

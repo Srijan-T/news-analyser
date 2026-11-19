@@ -26,6 +26,18 @@ frontend/
 3. On failure, raise `AppError(status, code, message)`. `errors.py` renders it in the standard envelope. Validation errors (422), unknown routes (404) and unexpected crashes (500) are wrapped the same way.
 4. On the frontend, `apiFetch` parses the envelope into an `ApiError`, so components can switch on `error.code`.
 
+## News providers (`backend/app/services/news/`)
+
+- `base.py`: `NormalizedArticle` (our own article shape), `SearchParams`, the `NewsProvider` protocol, and `NewsProviderError` (maps provider failures to 400/429/502).
+- `gnews.py`: calls GNews with the key in the `X-Api-Key` header. `normalize()` turns GNews JSON into `NormalizedArticle`. `_get()` maps GNews status codes to our errors.
+- `fake.py`: replays `fixtures/gnews_search.json`. Same normalizer, zero quota.
+- `__init__.py`: `get_news_provider()` picks one from `NEWS_PROVIDER`. Routes receive it via `Depends(get_news_provider)`, and tests swap it with `app.dependency_overrides[get_news_provider] = ...`.
+- Tests for `gnews.py` use `httpx.MockTransport`: no network, and each test can inspect the outgoing request.
+
+## Search flow
+
+`SearchPage` reads `q`, `sort` and `period` from the URL. The form writes them back with `setSearchParams`, and `useQuery` fetches `/api/news/search` whenever they change. Results are cached for 5 minutes (`staleTime`) and never retried, to protect the 100/day quota.
+
 ## Adding an endpoint
 
 1. Create or extend `backend/app/routers/<resource>.py` with a pydantic response model.
