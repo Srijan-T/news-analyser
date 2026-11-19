@@ -51,6 +51,11 @@ jobs:
         run: uv run pyright
       - name: Test
         run: uv run pytest
+      - name: Migrations match the models
+        # Fails if a model changed without a migration (tests already migrated this DB).
+        run: uv run alembic check
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
 
   frontend:
     runs-on: ubuntu-latest
