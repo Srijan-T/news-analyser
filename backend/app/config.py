@@ -1,5 +1,7 @@
 from functools import lru_cache
+from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +11,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_env: str = "development"
+
+    # "fake" serves a saved response and uses no API quota; "gnews" calls the real API.
+    news_provider: Literal["gnews", "fake"] = "fake"
+    gnews_api_key: SecretStr | None = None
 
 
 @lru_cache
