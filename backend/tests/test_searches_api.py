@@ -263,3 +263,26 @@ def test_dedupe_keeps_first_occurrence_in_provider_order() -> None:
 
     a, b, c = FakeNewsProvider().search(SearchParams(q="zzz-no-match"))[:3]
     assert [x.url for x in _dedupe_by_url([a, b, a, c])] == [a.url, b.url, c.url]
+
+
+# --- quota counts provider requests, not rows ---------------------------------------------
+
+
+def test_quota_counts_every_provider_request_a_search_made(
+    make_client: MakeClient, db: Session
+) -> None:
+    client = make_client(RecordingProvider(name="gnews"), news_daily_request_limit=95)
+    db.add(
+        Search(
+            provider="gnews",
+            query="environmental improvements",
+            sort="latest",
+            period=None,
+            cache_key="k",
+            result_count=4,
+            provider_requests=3,  # exact + corrected + broadened
+        )
+    )
+    db.flush()
+
+    assert client.get("/api/quota").json()["used"] == 3

@@ -169,9 +169,11 @@ def quota_status(
     """Real provider calls since 00:00 UTC today (when GNews resets its quota)."""
     now = now or datetime.now(UTC)
     start_of_day = now.astimezone(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    # Sum provider calls rather than counting rows: one search can make up to 3 (exact,
+    # corrected, broadened), and every one spends quota.
     used = db.scalar(
-        select(func.count())
-        .select_from(Search)
-        .where(Search.provider == provider, Search.created_at >= start_of_day)
+        select(func.coalesce(func.sum(Search.provider_requests), 0)).where(
+            Search.provider == provider, Search.created_at >= start_of_day
+        )
     )
     return QuotaStatus(provider=provider, limit=daily_limit, used=used or 0)

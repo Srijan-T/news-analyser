@@ -24,6 +24,7 @@ class Search(Base):
     instead of creating a new one, so counting today's rows gives today's API usage."""
 
     __tablename__ = "searches"
+    __table_args__ = (CheckConstraint("match_mode IN ('all', 'any')", name="match_mode"),)
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     provider: Mapped[str] = mapped_column(String(32))
@@ -33,6 +34,12 @@ class Search(Base):
     # provider + normalized query + sort + period: identical searches share a key.
     cache_key: Mapped[str] = mapped_column(String(300), index=True)
     result_count: Mapped[int] = mapped_column(Integer)
+    # Forgiving search: what the user typed, when the query that ran (`query`) differs because
+    # a typo was corrected or the words were broadened to "match any".
+    original_query: Mapped[str | None] = mapped_column(String(200))
+    match_mode: Mapped[str] = mapped_column(String(8), server_default="all")  # "all" | "any"
+    # Real provider calls this search made (1-3 with fallbacks); the daily quota sums these.
+    provider_requests: Mapped[int] = mapped_column(Integer, server_default="1")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )
