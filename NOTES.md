@@ -75,6 +75,12 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - `services/analyses.analyze_article`: returns the stored analysis if there is one (no AI call). Otherwise it analyzes, stores and commits. A unique-constraint race keeps the first.
 - Frontend: `ArticleDetail.tsx` (panel plus analyze mutation), `SentimentBadge.tsx`. The selected article is `?article=` in the URL.
 
+## History (`services/history.py`, `pages/HistoryPage.tsx`)
+
+- `_conditions(filters)` builds the WHERE clauses over `Article LEFT JOIN Analysis`. Both `list_articles` and `stats` use it, which is why the stats strip always matches the list.
+- `stats` groups by sentiment for the counts and averages. `sources` deliberately ignores the filters, so the dropdown keeps all its options.
+- Frontend: the filters live in the URL (`?sentiment=&source=&search=&within=&sort=&page=&article=`). `historyQuery()` in `client.ts` turns them into the shared query string, and `within` becomes `published_from` at request time.
+
 ## Adding an endpoint
 
 1. Create or extend `backend/app/routers/<resource>.py` with a pydantic response model.
