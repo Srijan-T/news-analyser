@@ -5,6 +5,9 @@ type Props = {
   /** Starting values. The parent remounts the form (via `key`) when these change. */
   initial: NewsSearchParams
   onSearch: (params: NewsSearchParams) => void
+  /** The query shown is a correction of what was typed: highlight it until edited, and
+   * point screen readers at the notice explaining it. */
+  correctedNoticeId?: string
 }
 
 const PERIODS: { value: Period | ''; label: string }[] = [
@@ -14,12 +17,14 @@ const PERIODS: { value: Period | ''; label: string }[] = [
   { value: '30d', label: 'Past month' },
 ]
 
-export function SearchForm({ initial, onSearch }: Props) {
+export function SearchForm({ initial, onSearch, correctedNoticeId }: Props) {
   const [q, setQ] = useState(initial.q)
   const [sort, setSort] = useState<SortOrder>(initial.sort)
   const [period, setPeriod] = useState<Period | ''>(initial.period ?? '')
 
   const trimmed = q.trim()
+  // Highlight only while the box still shows the correction; once edited it's the user's text.
+  const showingCorrection = Boolean(correctedNoticeId) && q === initial.q
 
   return (
     <form
@@ -39,7 +44,12 @@ export function SearchForm({ initial, onSearch }: Props) {
         aria-label="Search terms"
         aria-keyshortcuts="/"
         maxLength={200}
-        className="min-w-64 flex-1 rounded-md border border-line-strong bg-surface px-3 py-2 focus:border-muted focus:outline-none"
+        aria-describedby={showingCorrection ? correctedNoticeId : undefined}
+        className={`min-w-64 flex-1 rounded-md border bg-surface px-3 py-2 focus:outline-none ${
+          showingCorrection
+            ? 'border-accent ring-1 ring-accent'
+            : 'border-line-strong focus:border-muted'
+        }`}
       />
       <select
         value={sort}

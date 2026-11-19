@@ -7,7 +7,7 @@ import { ArticleDetail } from '../components/ArticleDetail.tsx'
 import { EarlierMatches } from '../components/EarlierMatches.tsx'
 import { QuotaBadge } from '../components/QuotaBadge.tsx'
 import { RecentSearches } from '../components/RecentSearches.tsx'
-import { SearchNotice } from '../components/SearchNotice.tsx'
+import { SEARCH_NOTICE_ID, SearchNotice } from '../components/SearchNotice.tsx'
 import { SearchForm } from '../components/SearchForm.tsx'
 import { timeAgo } from '../lib/format.ts'
 import { useKeyboardShortcuts } from '../lib/shortcuts.ts'
@@ -116,7 +116,19 @@ export function SearchPage() {
             key={search?.id ?? 'new'}
             initial={formValues}
             onSearch={(params) => create.mutate(params)}
+            correctedNoticeId={
+              search?.original_query && search.match_mode === 'all' ? SEARCH_NOTICE_ID : undefined
+            }
           />
+          {/* Right under the box: the user sees why its text differs from what they typed. */}
+          {search && !create.isPending && (
+            <SearchNotice
+              search={search}
+              onSearchExactly={(typed) =>
+                create.mutate({ q: typed, sort: search.sort, period: search.period, exact: true })
+              }
+            />
+          )}
           <QuotaBadge />
         </div>
 
@@ -156,12 +168,6 @@ export function SearchPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            <SearchNotice
-              search={search}
-              onSearchExactly={(typed) =>
-                create.mutate({ q: typed, sort: search.sort, period: search.period, exact: true })
-              }
-            />
             <p className="text-xs text-muted">
               {search.items.length} articles · fetched {timeAgo(search.created_at)} · free news
               plan, so articles can be up to ~12 hours old
