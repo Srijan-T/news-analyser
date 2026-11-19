@@ -38,7 +38,7 @@ frontend/
 
 1. Submitting the form calls the `create` mutation in `SearchPage`, which sends `POST /api/searches`.
 2. `services/searches.run_search` looks for an identical search (same `cache_key`) from the last 30 minutes. If there is one, it's returned with **200** and the provider isn't called.
-3. Otherwise it checks the quota (`quota_status` counts today's `searches` rows for the provider since 00:00 UTC), calls the provider, upserts the articles by URL, stores the search and its `search_results`, and returns **201**.
+3. Otherwise it takes a per-provider Postgres advisory lock (`pg_advisory_xact_lock`, held until the transaction ends), so concurrent new searches can't all slip under the quota. It then re-checks the cache, checks the quota (`quota_status` counts today's `searches` rows for the provider since 00:00 UTC), calls the provider, upserts the articles by URL, stores the search and its `search_results`, and returns **201**.
 4. The frontend puts the id in the URL (`?search=42`). Refresh, back/forward and the Recent searches links all go through `GET /api/searches/{id}`, which reads stored rows and never calls the provider.
 5. New searches are never auto-retried, since a retry could spend quota. After each search the `['searches']` and `['quota']` queries are invalidated so the history and the badge refresh.
 
