@@ -68,10 +68,15 @@ class AnalysisError(AppError):
         return cls(500, "ai_not_configured", "ANALYZER=openai but OPENAI_API_KEY is not set")
 
 
+def _cut_off(text: str) -> bool:
+    """True for text that stops mid-sentence, like the free GNews snippet's tail."""
+    return text.rstrip().endswith(("…", "..."))
+
+
 def normalize(draft: AnalysisDraft, article: ArticleText) -> AnalysisDraft:
     """Enforce our guarantees whatever the model returned: score in [-1, 1], at most 3 key
-    points, and at most 2 evidence quotes that really appear in the article text (so the UI
-    never shows an invented quote)."""
+    points that are complete (none ending mid-sentence in "…"), and at most 2 evidence
+    quotes that really appear in the article text (so the UI never shows an invented quote)."""
     source = " ".join(article.body.lower().split())
     evidence = [
         quote.strip()
@@ -81,7 +86,9 @@ def normalize(draft: AnalysisDraft, article: ArticleText) -> AnalysisDraft:
     return draft.model_copy(
         update={
             "score": max(-1.0, min(1.0, draft.score)),
-            "key_points": [p.strip() for p in draft.key_points if p.strip()][:MAX_KEY_POINTS],
+            "key_points": [p.strip() for p in draft.key_points if p.strip() and not _cut_off(p)][
+                :MAX_KEY_POINTS
+            ],
             "evidence": evidence[:MAX_EVIDENCE],
         }
     )

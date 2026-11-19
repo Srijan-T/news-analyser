@@ -151,3 +151,47 @@ def test_fake_analyzer_reads_negative_news_as_negative() -> None:
         source_name="Example News",
     )
     assert FakeAnalyzer().analyze(bad).draft.sentiment == "negative"
+
+
+# --- truncated snippets (GNews free tier cuts article text at ~250 characters) ------------
+
+TRUNCATED = ArticleText(
+    title="Founders set to sell shares in listing",
+    description="The seven founders are each expected to sell about $250 million in shares.",
+    snippet=(
+        "By Jane Doe · Nov 18, 2026, 8:46 PM EST\n"
+        "The company filed on Tuesday. Investors welcomed the news. "
+        "Analysts said demand was strong across every region and the listing could"
+        " become one of the largest of the decade, with shares priced at…"
+    ),
+    source_name="Example News",
+)
+
+
+def test_fake_analyzer_never_uses_a_cut_off_sentence_or_byline() -> None:
+    points = FakeAnalyzer().analyze(TRUNCATED).draft.key_points
+
+    assert points
+    assert not any(p.endswith(("…", "...")) for p in points)
+    assert not any(p.startswith("By ") for p in points)
+    assert all(p.endswith((".", "!", "?")) for p in points)
+
+
+def test_normalize_drops_key_points_that_end_mid_sentence() -> None:
+    result = normalize(
+        draft(key_points=["Profits hit a record.", "Shares rose after the announc…", "Ends..."]),
+        ARTICLE,
+    )
+    assert result.key_points == ["Profits hit a record."]
+
+
+def test_prompt_flags_cut_off_text_and_forbids_copying_it() -> None:
+    from app.services.ai.prompts import SYSTEM_PROMPT
+
+    assert "Opening text (cut off):" in build_input(TRUNCATED)
+    complete = ArticleText(
+        title="t", description=None, snippet="The full text ends here.", source_name="s"
+    )
+    assert "Opening text: The full text ends here." in build_input(complete)  # not flagged
+    assert "cut off" in SYSTEM_PROMPT
+    assert PROMPT_VERSION != "2026-11-19.1"  # wording changed, so the version must too
