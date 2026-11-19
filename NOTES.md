@@ -38,6 +38,14 @@ frontend/
 
 `SearchPage` reads `q`, `sort` and `period` from the URL. The form writes them back with `setSearchParams`, and `useQuery` fetches `/api/news/search` whenever they change. Results are cached for 5 minutes (`staleTime`) and never retried, to protect the 100/day quota.
 
+## Production setup
+
+- `create_app(settings)` builds the app from a `Settings` object. Tests pass their own, e.g. `create_app(Settings(static_dir=tmp))`.
+- `app/spa.py`: when `STATIC_DIR` is set (in Docker), a catch-all route serves the built files and falls back to `index.html`. It's registered **last**, so API routes win. Unknown `/api/*` paths still return the JSON 404.
+- `app/auth.py`: basic-auth ASGI middleware, active only when both `BASIC_AUTH_*` vars are set. `/api/health` is exempt.
+- `tests/conftest.py` pins env vars so your local `backend/.env` never changes test behaviour.
+- The frontend's `apiFetch` builds URLs from `window.location.origin`. A relative `fetch` breaks when the page was opened via a `user:pass@host` link.
+
 ## Adding an endpoint
 
 1. Create or extend `backend/app/routers/<resource>.py` with a pydantic response model.
