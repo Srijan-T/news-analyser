@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Article, Sentiment } from '../api/types.ts'
+import type { Article, BatchItemStatus, Sentiment } from '../api/types.ts'
 import { timeAgo } from '../lib/format.ts'
 import { SentimentBadge } from './SentimentBadge.tsx'
 
@@ -17,9 +17,27 @@ type Props = {
   onSelect?: () => void
   /** Show the AI TL;DR (when analyzed) instead of the provider's description. */
   showSummary?: boolean
+  /** A checkbox for batch analysis. null keeps an empty slot so cards stay aligned. */
+  selection?: { checked: boolean; disabled: boolean; onChange: (checked: boolean) => void } | null
+  /** Progress in a running batch analysis. */
+  batchStatus?: BatchItemStatus
 }
 
-export function ArticleCard({ article, selected = false, onSelect, showSummary = false }: Props) {
+// 'done' and 'skipped' need no label: the sentiment badge appears instead.
+const BATCH_LABEL: Partial<Record<BatchItemStatus, string>> = {
+  pending: 'Queued',
+  running: 'Analyzing…',
+  failed: 'Analysis failed',
+}
+
+export function ArticleCard({
+  article,
+  selected = false,
+  onSelect,
+  showSummary = false,
+  selection,
+  batchStatus,
+}: Props) {
   const [imageFailed, setImageFailed] = useState(false)
   const showImage = article.image_url && !imageFailed
   const blurb = showSummary && article.analysis ? article.analysis.tldr : article.description
@@ -30,6 +48,20 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
         selected ? 'border-accent ring-1 ring-accent' : 'border-line'
       } ${article.analysis ? SENTIMENT_EDGE[article.analysis.sentiment] : ''}`}
     >
+      {selection !== undefined && (
+        <div className="w-4 shrink-0 pt-1">
+          {selection && (
+            <input
+              type="checkbox"
+              checked={selection.checked}
+              disabled={selection.disabled}
+              onChange={(e) => selection.onChange(e.target.checked)}
+              aria-label={`Select for analysis: ${article.title}`}
+              className="size-4 accent-accent"
+            />
+          )}
+        </div>
+      )}
       {showImage ? (
         <img
           src={article.image_url!}
@@ -55,6 +87,17 @@ export function ArticleCard({ article, selected = false, onSelect, showSummary =
             Original ↗
           </a>
           {article.analysis && <SentimentBadge sentiment={article.analysis.sentiment} />}
+          {batchStatus && BATCH_LABEL[batchStatus] && (
+            <span
+              className={
+                batchStatus === 'failed'
+                  ? 'text-danger-fg'
+                  : `font-medium text-soft ${batchStatus === 'running' ? 'animate-pulse' : ''}`
+              }
+            >
+              {BATCH_LABEL[batchStatus]}
+            </span>
+          )}
         </p>
         <h2 className="mt-1 leading-snug font-semibold">
           {/* The title selects the article; "Original" opens the source site. */}

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.services.ai.base import Sentiment
 from app.services.news.base import Period, SortOrder
@@ -111,3 +111,46 @@ class StatsOut(BaseModel):
 
 class SimilarArticles(BaseModel):
     items: list[ArticleOut]
+
+
+MAX_BATCH_SIZE = 10  # bounds one request's AI spend and keeps the job short
+
+
+class CreateAnalysisBatch(BaseModel):
+    article_ids: list[int] = Field(
+        min_length=1, max_length=MAX_BATCH_SIZE, description="Articles to analyze, in order"
+    )
+
+    @field_validator("article_ids")
+    @classmethod
+    def unique(cls, ids: list[int]) -> list[int]:
+        if len(set(ids)) != len(ids):
+            raise ValueError("article ids must be unique")
+        return ids
+
+
+BatchItemStatus = Literal["pending", "running", "done", "skipped", "failed"]
+
+
+class BatchItemOut(BaseModel):
+    article_id: int
+    position: int
+    status: BatchItemStatus = Field(description='"skipped": the article was already analyzed')
+    error_code: str | None = Field(description='Why it failed, e.g. "ai_unavailable"')
+    analysis: AnalysisOut | None
+
+
+class BatchCounts(BaseModel):
+    pending: int
+    running: int
+    done: int
+    skipped: int
+    failed: int
+
+
+class AnalysisBatchOut(BaseModel):
+    id: int
+    status: Literal["running", "done"] = Field(description='"done" once no item is unfinished')
+    counts: BatchCounts
+    items: list[BatchItemOut]
+    created_at: datetime

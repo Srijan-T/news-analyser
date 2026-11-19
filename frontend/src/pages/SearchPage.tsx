@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { ApiError, api } from '../api/client.ts'
 import type { NewsSearchParams } from '../api/types.ts'
-import { ArticleCard, ArticleCardSkeleton } from '../components/ArticleCard.tsx'
+import { ArticleCardSkeleton } from '../components/ArticleCard.tsx'
 import { ArticleDetail } from '../components/ArticleDetail.tsx'
 import { EarlierMatches } from '../components/EarlierMatches.tsx'
 import { ExampleTopics } from '../components/ExampleTopics.tsx'
@@ -10,6 +10,7 @@ import { QuotaBadge } from '../components/QuotaBadge.tsx'
 import { RecentSearches } from '../components/RecentSearches.tsx'
 import { SEARCH_NOTICE_ID, SearchNotice } from '../components/SearchNotice.tsx'
 import { SearchForm } from '../components/SearchForm.tsx'
+import { SearchResults } from '../components/SearchResults.tsx'
 import { timeAgo } from '../lib/format.ts'
 import { useKeyboardShortcuts } from '../lib/shortcuts.ts'
 import { useToast } from '../lib/toast.ts'
@@ -169,20 +170,12 @@ export function SearchPage() {
             />
           </div>
         ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-muted">
-              {search.items.length} articles · fetched {timeAgo(search.created_at)} · free news
-              plan, so articles can be up to ~12 hours old
-            </p>
-            {search.items.map((article) => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                selected={article.id === articleId}
-                onSelect={() => selectArticle(article.id)}
-              />
-            ))}
-          </div>
+          <SearchResults
+            key={search.id}
+            search={search}
+            selectedId={articleId}
+            onSelect={selectArticle}
+          />
         )}
       </section>
 
