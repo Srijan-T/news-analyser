@@ -90,7 +90,7 @@ export function SearchResults({
   }, [data, queryClient, search.id, toast])
 
   const unanalyzed = search.items.filter((a) => !a.analysis).map((a) => a.id)
-  const statusOf = new Map(data?.items.map((item) => [item.article_id, item.status]))
+  const itemOf = new Map(data?.items.map((item) => [item.article_id, item]))
   const finishedCount = data ? data.items.length - data.counts.pending - data.counts.running : 0
   const toggle = (id: number, on: boolean) =>
     setChecked((old) => {
@@ -102,7 +102,7 @@ export function SearchResults({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted">
+      <p aria-live="polite" className="text-xs text-muted">
         {search.items.length} articles · fetched {timeAgo(search.created_at)} · free news plan, so
         articles can be up to ~12 hours old
       </p>
@@ -142,6 +142,7 @@ export function SearchResults({
             >
               Analyze all unanalyzed ({Math.min(unanalyzed.length, MAX_BATCH)})
             </button>
+            <span className="text-xs text-muted">Up to {MAX_BATCH} at a time</span>
             {start.error && (
               <p role="alert" className="text-sm text-danger-fg">
                 {start.error instanceof ApiError
@@ -168,7 +169,8 @@ export function SearchResults({
                   onChange: (on) => toggle(article.id, on),
                 }
           }
-          batchStatus={statusOf.get(article.id)}
+          batchStatus={itemOf.get(article.id)?.status}
+          batchError={itemOf.get(article.id)?.error_code}
         />
       ))}
     </div>
