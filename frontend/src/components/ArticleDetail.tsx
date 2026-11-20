@@ -32,14 +32,25 @@ export function ArticleDetail({
   onClose: () => void
 }) {
   const panel = useRef<HTMLElement>(null)
+  // Same query as DetailBody's (shared cache, one request): tells us when the content is in.
+  const loaded = useQuery({
+    queryKey: ['article', articleId],
+    queryFn: () => api.getArticle(articleId),
+  }).isSuccess
 
   // Below `lg` the panel renders after the whole results list, far off screen, so a tap on a
-  // headline would seem to do nothing: bring the panel into view and move focus to it.
+  // headline would seem to do nothing: bring the panel into view and move focus to it. Do it
+  // again once the article has loaded: while the short loading placeholder is the last thing
+  // on the page (as on History), the page isn't tall enough to scroll it to the top yet.
+  const focused = useRef(false)
   useEffect(() => {
     if (window.matchMedia(SIDE_BY_SIDE).matches) return
     panel.current?.scrollIntoView({ block: 'start' })
-    panel.current?.focus({ preventScroll: true })
-  }, [])
+    if (!focused.current) {
+      focused.current = true // focus once; re-focusing after the load would be jarring
+      panel.current?.focus({ preventScroll: true })
+    }
+  }, [loaded])
 
   function close() {
     onClose()
