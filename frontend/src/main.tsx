@@ -7,11 +7,15 @@ import App from './App.tsx'
 import { AuthGate } from './components/AuthGate.tsx'
 import { ToastProvider } from './components/ToastProvider.tsx'
 import './index.css'
+import { noteSessionExpired } from './lib/session.ts'
 
 // If any request finds the session gone (expired or signed out elsewhere), re-check the
 // session so AuthGate swaps back to the sign-in page.
 const onError = (error: unknown) => {
-  if (isUnauthenticated(error)) queryClient.invalidateQueries({ queryKey: SESSION_KEY })
+  if (isUnauthenticated(error)) {
+    noteSessionExpired()
+    queryClient.invalidateQueries({ queryKey: SESSION_KEY })
+  }
 }
 
 const queryClient = new QueryClient({

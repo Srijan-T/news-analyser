@@ -8,6 +8,9 @@ import { SentimentBadge } from './SentimentBadge.tsx'
 
 function analysisError(error: Error): string {
   if (error instanceof ApiError) {
+    if (error.code === 'ai_not_configured') {
+      return "AI analysis isn't set up on the server (no OpenAI key), so it can't run yet."
+    }
     if (error.code === 'ai_output_invalid') return "The AI couldn't produce an analysis. Try again."
     if (error.code === 'ai_unavailable' || error.code === 'network_error') return error.message
   }
@@ -90,7 +93,11 @@ function DetailBody({ articleId, searchId }: { articleId: number; searchId: numb
   })
 
   if (article.isPending) {
-    return <div className="clear-both h-64 animate-pulse rounded-lg bg-subtle" aria-busy="true" />
+    return (
+      <div role="status" aria-busy="true" className="clear-both h-64 animate-pulse rounded-lg bg-subtle">
+        <span className="sr-only">Loading article…</span>
+      </div>
+    )
   }
   if (article.isError) {
     return <Card>Couldn't load this article. It may have been removed; pick another headline.</Card>
@@ -133,7 +140,8 @@ function DetailBody({ articleId, searchId }: { articleId: number; searchId: numb
             </p>
           )}
           <p className="text-xs text-muted">
-            Uses AI on the headline, description and opening lines.
+            Uses AI on the headline, description and opening lines (the free news plan doesn't
+            include full articles).
           </p>
         </div>
       )}
@@ -179,11 +187,8 @@ function AnalysisView({ analysis }: { analysis: Analysis }) {
       <div className="flex flex-wrap items-center gap-2">
         <SentimentBadge sentiment={analysis.sentiment} score={analysis.score} />
         {analysis.text_source === 'snippet' && (
-          <span
-            className="text-xs text-muted"
-            title="The free news plan only provides the article's opening, not the full text"
-          >
-            Based on the article's opening
+          <span className="text-xs text-muted">
+            Based on the article's opening; the free news plan doesn't include full text
           </span>
         )}
       </div>
