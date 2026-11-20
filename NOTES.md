@@ -36,9 +36,9 @@ frontend/
 
 ## Search flow
 
-1. Submitting the form calls the `create` mutation in `SearchPage`, which sends `POST /api/searches`.
+1. Submitting the form (or clicking an example topic in `ExampleTopics.tsx` on the empty page) calls the `create` mutation in `SearchPage`, which sends `POST /api/searches`. The mutation resets whenever the shown search changes, so an old error never hides another search.
 2. `services/searches.run_search` looks for an identical search (same `cache_key`) from the last 30 minutes. If there is one, it's returned with **200** and the provider isn't called.
-3. Otherwise it takes a per-provider Postgres advisory lock (`pg_advisory_xact_lock`, held until the transaction ends), so concurrent new searches can't all slip under the quota. It then re-checks the cache, checks the quota (`quota_status` counts today's `searches` rows for the provider since 00:00 UTC), calls the provider, drops repeats (same URL, or the same story under another URL: see `drop_near_duplicates`), upserts the articles by URL, stores the search and its `search_results`, and returns **201**.
+3. Otherwise it takes a per-provider Postgres advisory lock (`pg_advisory_xact_lock`, held until the transaction ends), so concurrent new searches can't all slip under the quota. It then re-checks the cache, checks the quota (`quota_status` sums today's `provider_requests` for the provider since 00:00 UTC; a search with fallbacks uses up to 3), calls the provider, drops repeats (same URL, or the same story under another URL: see `drop_near_duplicates`), upserts the articles by URL, stores the search and its `search_results`, and returns **201**.
 4. The frontend puts the id in the URL (`?search=42`). Refresh, back/forward and the Recent searches links all go through `GET /api/searches/{id}`, which reads stored rows and never calls the provider.
 5. New searches are never auto-retried, since a retry could spend quota. After each search the `['searches']` and `['quota']` queries are invalidated so the history and the badge refresh.
 
@@ -108,7 +108,8 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - **Toasts:** `const toast = useToast(); toast('Saved', 'success')` (from `lib/toast.ts`, provided by `components/ToastProvider.tsx`). They auto-dismiss after 4.5 s, show at most three at once, and are announced by screen readers.
 - **Status-aware API calls:** `apiRequest()` returns `{ data, status }`. `createSearch` returns `{ search, cached }` (200 = reused) and `analyzeArticle` returns `{ analysis, created }` (201 = new). The toasts use these.
 - **Keyboard:** `useKeyboardShortcuts({ onSlash, onEscape })` in `lib/shortcuts.ts`. It ignores keys while you're typing in a field.
-- **Article panel:** `ArticleDetail` takes `onClose` (a Close button, "Back to results" on phones). Below `lg` it renders after the list, so on mount it scrolls itself into view and takes focus; closing scrolls back to the card (found by `data-article-id`).
+- **Article panel:** `ArticleDetail` takes `onClose` (a Close button, "Back to results" on phones). Below `lg` it renders after the list, so on mount it scrolls itself into view and takes focus, then scrolls again once the article has loaded (the loading placeholder is too short to reach the top of a short page); closing scrolls back to the card (found by `data-article-id`).
+- **Page layout:** Search and History show the article column only while `?article=` is set; otherwise the content is centred. Unknown paths render the `NotFound` route in `App.tsx`.
 - **Session expiry:** a 401 mid-session calls `noteSessionExpired()` (`lib/session.ts`, from `main.tsx`), so the sign-in page says the session expired; a deliberate Sign out doesn't.
 
 ## Adding an endpoint
