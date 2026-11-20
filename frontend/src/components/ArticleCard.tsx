@@ -44,6 +44,7 @@ export function ArticleCard({
 
   return (
     <article
+      data-article-id={article.id} // lets the detail panel scroll back to this card
       className={`flex gap-4 rounded-lg border bg-surface p-4 ${
         selected ? 'border-accent ring-1 ring-accent' : 'border-line'
       } ${article.analysis ? SENTIMENT_EDGE[article.analysis.sentiment] : ''}`}

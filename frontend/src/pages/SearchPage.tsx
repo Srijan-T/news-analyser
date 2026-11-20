@@ -74,11 +74,15 @@ export function SearchPage() {
     onError: () => queryClient.invalidateQueries({ queryKey: ['quota'] }),
   })
 
+  // Closing keeps the current search (if any) and drops only the article.
+  const closeArticle = () =>
+    setSearchParams(searchId !== null ? { search: String(searchId) } : {})
+
   useKeyboardShortcuts({
     onSlash: () => document.getElementById('search-input')?.focus(),
     // Esc closes the detail panel, keeping the current search.
     onEscape: () => {
-      if (articleId !== null && searchId !== null) setSearchParams({ search: String(searchId) })
+      if (articleId !== null) closeArticle()
     },
   })
 
@@ -190,7 +194,12 @@ export function SearchPage() {
 
       {articleId !== null && (
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <ArticleDetail key={articleId} articleId={articleId} searchId={searchId} />
+          <ArticleDetail
+            key={articleId}
+            articleId={articleId}
+            searchId={searchId}
+            onClose={closeArticle}
+          />
         </aside>
       )}
     </div>
