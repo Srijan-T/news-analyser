@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { ApiError, api } from '../api/client.ts'
 import type { NewsSearchParams } from '../api/types.ts'
@@ -73,6 +74,11 @@ export function SearchPage() {
     // A quota error changes what the badge should show.
     onError: () => queryClient.invalidateQueries({ queryKey: ['quota'] }),
   })
+
+  // A failed search's error belongs to that attempt: once the user moves to another search
+  // (recent searches, back/forward), show that search instead of the old error.
+  const resetCreate = create.reset
+  useEffect(() => resetCreate(), [searchId, resetCreate])
 
   // Closing keeps the current search (if any) and drops only the article.
   const closeArticle = () =>
