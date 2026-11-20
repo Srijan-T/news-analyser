@@ -32,7 +32,12 @@ export function SearchResults({
   const queryClient = useQueryClient()
   const toast = useToast()
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
-  const [batchId, setBatchId] = useState<number | null>(null)
+  // The running batch's id also lives in the query cache, so leaving the page (History, another
+  // search) and coming back resumes the progress instead of forgetting the batch.
+  const activeKey = ['active-batch', search.id]
+  const [batchId, setBatchId] = useState<number | null>(
+    () => queryClient.getQueryData<number>(activeKey) ?? null,
+  )
   const announced = useRef<number | null>(null) // the batch whose summary was shown
 
   const start = useMutation({
@@ -41,6 +46,7 @@ export function SearchResults({
     onSuccess: (batch) => {
       setChecked(new Set())
       queryClient.setQueryData(['analysis-batch', batch.id], batch)
+      queryClient.setQueryData(activeKey, batch.id)
       setBatchId(batch.id)
     },
   })
@@ -74,6 +80,9 @@ export function SearchResults({
     if (data.status === 'done' && announced.current !== data.id) {
       announced.current = data.id
       toast(summary(data), data.counts.failed ? 'info' : 'success')
+      queryClient.removeQueries({ queryKey: ['active-batch', search.id] })
+      // Re-read the stored search (no news-API call) so every card matches the server.
+      queryClient.invalidateQueries({ queryKey: ['search', search.id] })
       queryClient.invalidateQueries({ queryKey: ['article'] })
       queryClient.invalidateQueries({ queryKey: ['history'] })
       queryClient.invalidateQueries({ queryKey: ['stats'] })
@@ -103,6 +112,10 @@ export function SearchResults({
           <p className="text-sm text-soft">
             Analyzing {finishedCount} of {data.items.length}…
           </p>
+          {batch.isError && (
+            // Polling keeps going, so this clears by itself once the server answers again.
+            <p className="text-xs text-danger-fg">Can't reach the server, still trying…</p>
+          )}
           <div className="h-1.5 overflow-hidden rounded-full bg-subtle-strong">
             <div
               className="h-full rounded-full bg-accent transition-[width] duration-500"

@@ -244,7 +244,12 @@ export function HistoryPage() {
 
       {articleId !== null && (
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <ArticleDetail key={articleId} articleId={articleId} searchId={null} />
+          <ArticleDetail
+            key={articleId}
+            articleId={articleId}
+            searchId={null}
+            onClose={() => update('article', null, ['page'])}
+          />
         </aside>
       )}
     </div>

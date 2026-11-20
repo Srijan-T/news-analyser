@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { type ReactNode, useEffect, useRef } from 'react'
 import { ApiError, api } from '../api/client.ts'
 import type { Analysis, Article } from '../api/types.ts'
 import { timeAgo } from '../lib/format.ts'
@@ -13,8 +14,60 @@ function analysisError(error: Error): string {
   return 'Analysis failed. Try again.'
 }
 
-/** Detail panel for the selected article: its AI analysis, or a button to create one. */
-export function ArticleDetail({ articleId, searchId }: { articleId: number; searchId: number | null }) {
+// Matches Tailwind's `lg`: from here the panel sits beside the list; below it, under the list.
+const SIDE_BY_SIDE = '(min-width: 1024px)'
+
+/** Detail panel for the selected article: its AI analysis, or a button to create one. Mount
+ * it with key={articleId} so each selection is a fresh mount. */
+export function ArticleDetail({
+  articleId,
+  searchId,
+  onClose,
+}: {
+  articleId: number
+  searchId: number | null
+  onClose: () => void
+}) {
+  const panel = useRef<HTMLElement>(null)
+
+  // Below `lg` the panel renders after the whole results list, far off screen, so a tap on a
+  // headline would seem to do nothing: bring the panel into view and move focus to it.
+  useEffect(() => {
+    if (window.matchMedia(SIDE_BY_SIDE).matches) return
+    panel.current?.scrollIntoView({ block: 'start' })
+    panel.current?.focus({ preventScroll: true })
+  }, [])
+
+  function close() {
+    onClose()
+    if (window.matchMedia(SIDE_BY_SIDE).matches) return
+    // Back to where the user was in the list.
+    const card = document.querySelector<HTMLElement>(`[data-article-id="${articleId}"]`)
+    card?.scrollIntoView({ block: 'center' })
+    card?.querySelector<HTMLElement>('h2 button')?.focus({ preventScroll: true })
+  }
+
+  return (
+    <section
+      ref={panel}
+      tabIndex={-1}
+      aria-label="Article analysis"
+      className="scroll-mt-4 space-y-2 outline-none"
+    >
+      <button
+        type="button"
+        onClick={close}
+        className="text-sm text-muted hover:text-fg lg:float-right lg:text-xs"
+      >
+        <span className="lg:hidden">← Back to results</span>
+        <span className="hidden lg:inline">✕ Close</span>
+      </button>
+      <DetailBody articleId={articleId} searchId={searchId} />
+    </section>
+  )
+}
+
+function DetailBody({ articleId, searchId }: { articleId: number; searchId: number | null }) {
   const queryClient = useQueryClient()
   const toast = useToast()
   const article = useQuery({ queryKey: ['article', articleId], queryFn: () => api.getArticle(articleId) })
@@ -37,15 +90,15 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
   })
 
   if (article.isPending) {
-    return <div className="h-64 animate-pulse rounded-lg bg-subtle" aria-label="Loading article" />
+    return <div className="clear-both h-64 animate-pulse rounded-lg bg-subtle" aria-busy="true" />
   }
   if (article.isError) {
-    return <p className="text-sm text-muted">Couldn't load this article.</p>
+    return <Card>Couldn't load this article. It may have been removed; pick another headline.</Card>
   }
 
   const { analysis } = article.data
   return (
-    <div className="space-y-4 rounded-lg border border-line bg-surface p-5">
+    <div className="clear-both space-y-4 rounded-lg border border-line bg-surface p-5">
       <div>
         <p className="text-xs text-muted">
           {article.data.source_name} · {timeAgo(article.data.published_at)}
@@ -85,6 +138,14 @@ export function ArticleDetail({ articleId, searchId }: { articleId: number; sear
         </div>
       )}
     </div>
+  )
+}
+
+function Card({ children }: { children: ReactNode }) {
+  return (
+    <p className="clear-both rounded-lg border border-line bg-surface p-5 text-sm text-muted">
+      {children}
+    </p>
   )
 }
 
