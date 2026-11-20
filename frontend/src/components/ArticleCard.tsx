@@ -17,8 +17,8 @@ type Props = {
   onSelect?: () => void
   /** Show the AI TL;DR (when analyzed) instead of the provider's description. */
   showSummary?: boolean
-  /** A checkbox for batch analysis. null keeps an empty slot so cards stay aligned. */
-  selection?: { checked: boolean; disabled: boolean; onChange: (checked: boolean) => void } | null
+  /** A checkbox for batch analysis, shown on the thumbnail (so no column is reserved). */
+  selection?: { checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }
   /** Progress in a running batch analysis. */
   batchStatus?: BatchItemStatus
 }
@@ -49,31 +49,32 @@ export function ArticleCard({
         selected ? 'border-accent ring-1 ring-accent' : 'border-line'
       } ${article.analysis ? SENTIMENT_EDGE[article.analysis.sentiment] : ''}`}
     >
-      {selection !== undefined && (
-        <div className="w-4 shrink-0 pt-1">
-          {selection && (
+      <div className="relative h-20 w-28 shrink-0">
+        {showImage ? (
+          <img
+            src={article.image_url!}
+            alt=""
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="h-full w-full rounded-md bg-subtle object-cover"
+          />
+        ) : (
+          <div className="h-full w-full rounded-md bg-subtle" />
+        )}
+        {selection && (
+          // A backed corner chip keeps the box visible on any photo, with a 28px tap target.
+          <label className="absolute top-1 left-1 flex size-7 cursor-pointer items-center justify-center rounded-md bg-surface/90 shadow-sm">
             <input
               type="checkbox"
               checked={selection.checked}
               disabled={selection.disabled}
               onChange={(e) => selection.onChange(e.target.checked)}
               aria-label={`Select for analysis: ${article.title}`}
-              className="size-4 accent-accent"
+              className="size-4 cursor-pointer accent-accent disabled:cursor-not-allowed"
             />
-          )}
-        </div>
-      )}
-      {showImage ? (
-        <img
-          src={article.image_url!}
-          alt=""
-          loading="lazy"
-          onError={() => setImageFailed(true)}
-          className="h-20 w-28 shrink-0 rounded-md bg-subtle object-cover"
-        />
-      ) : (
-        <div className="h-20 w-28 shrink-0 rounded-md bg-subtle" />
-      )}
+          </label>
+        )}
+      </div>
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
           <span>

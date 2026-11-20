@@ -161,7 +161,7 @@ export function SearchResults({
           onSelect={() => onSelect(article.id)}
           selection={
             article.analysis || running
-              ? null
+              ? undefined
               : {
                   checked: checked.has(article.id),
                   disabled: !checked.has(article.id) && checked.size >= MAX_BATCH,
