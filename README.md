@@ -10,10 +10,11 @@ Search recent news on any topic, get an **AI summary and sentiment** for the art
 
 Built for a busy reader keeping tabs on a topic, such as a company, a sector or a story, who wants the gist and the tone of coverage quickly.
 
-1. **Search** recent news by keyword, sorted by relevance or date, optionally within the past 24 hours, week or month. Results are stored, so refreshing or sharing a link reopens the same results without spending API quota.
+1. **Search** recent news by keyword, sorted by relevance or date, optionally within the past 24 hours, week or month, or start from one of the **example topics** on the empty page. Results are stored, so refreshing or sharing a link reopens the same results without spending API quota. Typos are corrected (with a visible "Search exactly as typed" undo), and the same story arriving under two URLs is shown once.
 2. **Analyze** any article with one click, or tick several (up to 10) and analyze them together in the background, with progress shown per article. The AI returns a one-sentence TL;DR, key points, a sentiment (positive / neutral / negative) with a score from −1 to 1, the reason for that sentiment, and up to two **quotes from the article** as evidence.
 3. **Everything is stored** in Postgres: searches, articles and analyses.
 4. **History** shows every analyzed article with filters (sentiment, source, search, date) and a summary strip: counts per sentiment and the average score for whatever is filtered.
+5. **Works on phones:** one column below 1024px, where tapping a headline brings its analysis into view and "Back to results" returns to the card. Light, dark and system themes.
 
 ## Architecture
 
@@ -47,6 +48,7 @@ flowchart LR
 | **The model's output is checked, not trusted** | The score is clamped and the lists are capped. Evidence quotes are kept **only if they appear verbatim in the article**. Postgres CHECK constraints back this up. A refusal or invalid output returns an honest 502; there's never a fabricated result. | Some real quotes get dropped if the model paraphrases them. |
 | **No LLM "confidence" score** | Self-reported confidence isn't calibrated and overlaps with the score. Evidence quotes make the sentiment checkable instead. | Less of a single "how sure" number to show. |
 | **Forgiving search** (only when a search finds nothing) | Retry once with a typo-corrected query, then once with "match any word" (at most 3 GNews calls, all counted against the quota and spaced out for GNews's 1 request/second limit). Typos are fixed by a free local spell-checker when it's confident, and by gpt-6-luna otherwise (it knows names: "nvdia" → "nvidia", not "nadia"). The banner says what ran, with "Search instead for…". Stored articles are also fuzzy-matched in Postgres (`pg_trgm`) at no quota cost. | A typo'd search can use up to 3 of the 95 daily requests. Searches that already return results are never second-guessed. |
+| **Near-duplicate stories dropped before storing** | Publishers sometimes fix a headline typo, which changes the URL, so URL dedupe alone let one story through twice. Two articles count as one story if their normalized headlines are identical, or ≥ 90% similar **and** share the description or image. | A shared source alone isn't enough evidence: one outlet's "stock jumps/drops 5%" headlines are 92% similar but opposite news. Only articles within one search response are compared. |
 | **Batch analysis as a server job + polling** | `POST /api/analysis-batches` returns **202 Accepted** with a `Location` to poll. Three worker threads run the analyses, each through the same per-article row lock, so a batch and a single "Analyze" click never pay twice for one article. Cards fill in as each analysis lands. Batches are capped at 10 to bound one request's AI spend. | The job runs in-process (FastAPI `BackgroundTasks`), so a restart mid-batch loses it. Leftover items are reported as `interrupted` after 10 minutes instead of hanging. A real queue (RQ or Celery with Redis) would add retries and survive restarts. |
 | **Each article analyzed once** | Asking again returns the stored analysis (200) without calling the AI. | Re-running (e.g. after a prompt change) isn't in the UI yet. |
 | **Password sign-in page**, not HTTP basic auth | Basic auth's browser pop-up doesn't appear in embedded browsers or link previews. Visitors saw raw JSON. A form plus an HMAC-signed, HttpOnly cookie works everywhere, with no server-side session store. | One shared password, with no per-user accounts or audit trail. |
@@ -61,6 +63,9 @@ Each item below has its own PR or commit, with a test where the bug could be rep
 - **Untrusted provider data.** An automated security review flagged that article URLs went straight into `href`. Non-`http(s)` URLs are now dropped where provider data enters the system, so every provider and page is covered.
 - **Deploying to Railway:** its builder rejects Docker `--mount` flags (two fixes, #4 and #5), and its pre-deploy step couldn't reach the private database (#8). Each was diagnosed from the build or deploy logs, not guessed.
 - **Basic auth looked broken** in browsers that don't show its pop-up. Replaced with a sign-in page (#6).
+- **The same story twice.** A search showed one TechCrunch article twice because a headline edit changed its URL. A fuzzy-title test first merged opposite headlines from one outlet, so the rule now needs a shared description or image as well (#21).
+- **A pre-submission UX pass found five real problems:** on phones a tapped headline's analysis appeared far below the screen with nothing scrolling to it; the panel could only be closed with Esc; a failed search's error hid every other search afterwards; batch progress was lost when navigating away mid-batch; and a network blip froze the progress bar silently. All fixed in #26, plus a dozen polish items in #27 (404 page, clearer set-up and session-expiry messages, focus rings, batch failure reasons).
+- **One bug only showed on the live site.** On History at phone width the panel stopped 493px down the screen: it was scrolled into view while still a short loading placeholder, when the page wasn't tall enough yet. Local data loads instantly and hid it; reproduced locally with a simulated 600 ms delay, then fixed by scrolling again once the article loads (#28).
 - **Config mistakes fail loudly.** An uppercase `ANALYZER=OPENAI` crashed the new container on startup, and the health check kept the previous version serving, so users never saw a broken app.
 
 ## How it was built
@@ -68,7 +73,8 @@ Each item below has its own PR or commit, with a test where the bug could be rep
 - **One PR per feature**, each with a description (what / why / how verified / what wasn't verified), small focused commits, and merges that keep the history readable.
 - **`main` is protected:** merging requires green CI (backend, frontend and a production Docker build) and resolved review threads.
 - **CI** runs ruff, pyright, pytest against a real Postgres, oxlint, tsc, the Docker build, and `alembic check` (which fails if models and migrations drift apart).
-- **Tests:** 119 backend tests against real Postgres. Almost all run inside a transaction that's rolled back afterwards. The exception is the real-concurrency tests for the race conditions, which need genuinely committed transactions and truncate their tables when they finish. Bug fixes start with a failing test.
+- **Tests:** 183 backend tests against real Postgres. Almost all run inside a transaction that's rolled back afterwards. The exception is the real-concurrency tests for the race conditions, which need genuinely committed transactions and truncate their tables when they finish. Bug fixes start with a failing test.
+- **UI changes are checked in a real browser** at desktop (1440px) and phone (375px) widths, in light and dark mode. Failure paths that can't be triggered on demand (network errors, expired sessions, slow batches, a missing API key) were tested by scripting the API's responses in that browser tab, without touching the database.
 - **Pull requests get an automated AI code review (Codex).** Each finding was fixed (test-first where it was a bug), answered in its thread, and resolved before merging.
 
 ## Limitations and what I'd do with more time
@@ -77,9 +83,11 @@ Each item below has its own PR or commit, with a test where the bug could be rep
 - **Re-run and delete an analysis** (e.g. after a prompt change). Also: per-topic sentiment over time, and streaming the analysis as it's generated.
 - **An "Analyze" button on each result card** (today a single article is analyzed from its detail panel, several at once with the checkboxes), and **exporting** the history as CSV.
 - **A durable job queue** (RQ or Celery) for batch analysis, with retries for failed items and jobs that survive a restart.
-- **Top headlines** as the empty state of the search page.
+- **Live top headlines** on the empty search page, next to the fixed example topics.
+- **Near-duplicates across searches:** today only articles within one search response are compared; matching new articles against stored ones would also catch a story re-published days later.
 - **An end-to-end browser test** (Playwright, using the fake providers) of search → analyze → history in CI. Today the UI is checked by hand in a browser for each PR.
-- **Frontend unit tests:** the frontend has lint and type checks, but no unit tests yet.
+- **Frontend component tests** (Vitest + Testing Library): the frontend has lint and type checks, and every UX fix was verified by hand in the browser, but no automated tests lock those behaviours in yet. An automated accessibility check (axe) in CI would go with them.
+- **A slide-over article panel on phones**, instead of rendering it below the list and scrolling to it.
 - **A version or commit hash in `/api/health`**, to confirm which build is live without looking at bundle hashes.
 - **Per-user accounts** instead of one shared password, if more than a handful of people used it.
 
