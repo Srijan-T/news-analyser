@@ -27,11 +27,18 @@ function errorMessage(error: Error): string {
     case 'news_rate_limited':
     case 'network_error':
       return error.message
+    case 'news_provider_not_configured':
+      return "News search isn't set up on the server (no news API key), so searching can't work yet."
     case 'search_not_found':
       return "That search doesn't exist. Run a new one above."
     default:
       return 'The news service is having trouble right now. Try again in a moment.'
   }
+}
+
+/** A server set-up problem: retrying can't help, so don't offer it. */
+function isConfigError(error: Error): boolean {
+  return error instanceof ApiError && error.code.endsWith('_not_configured')
 }
 
 /** The URL holds the stored search's id (?search=42), so refresh, back/forward and shared
@@ -137,6 +144,7 @@ export function SearchPage() {
             key={search?.id ?? 'new'}
             initial={formValues}
             onSearch={(params) => create.mutate(params)}
+            pending={create.isPending}
             correctedNoticeId={
               search?.original_query && search.match_mode === 'all' ? SEARCH_NOTICE_ID : undefined
             }
@@ -157,7 +165,8 @@ export function SearchPage() {
         </div>
 
         {create.isPending || (searchId !== null && stored.isPending) ? (
-          <div className="space-y-3" aria-busy="true" aria-label="Loading results">
+          <div className="space-y-3" role="status" aria-busy="true">
+            <span className="sr-only">Loading results…</span>
             {Array.from({ length: 4 }, (_, i) => (
               <ArticleCardSkeleton key={i} />
             ))}
@@ -165,9 +174,17 @@ export function SearchPage() {
         ) : error ? (
           <div role="alert" className="rounded-md border border-danger-line bg-danger-bg p-4 text-sm">
             <p className="text-danger-fg">{errorMessage(error)}</p>
-            {create.error && create.variables && (
+            {create.error && create.variables && !isConfigError(create.error) && (
               <button
                 onClick={() => create.mutate(create.variables)}
+                className="mt-2 font-medium text-danger-fg underline"
+              >
+                Try again
+              </button>
+            )}
+            {!create.error && stored.isError && (
+              <button
+                onClick={() => stored.refetch()}
                 className="mt-2 font-medium text-danger-fg underline"
               >
                 Try again

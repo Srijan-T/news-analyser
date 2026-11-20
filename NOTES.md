@@ -81,7 +81,7 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - The route schedules `BatchRunner.run` as a FastAPI background task, which runs after the 202 is sent. The runner reads the pending items and processes them with up to `WORKERS = 3` threads. Each thread opens its **own session** (sessions aren't thread-safe), marks the item `running`, calls `analyses.analyze_article` (so the per-article row lock still prevents double AI calls), then marks it `done`/`skipped`/`failed` with the error code.
 - Status isn't stored on the batch; it's derived from the items. `item_state()` reports items unfinished for over `STALE_AFTER` (10 min) as `failed`/`interrupted`. The GET never writes.
 - Tests override `get_batch_runner` with `workers=1` and the test session (same code, run inline). One test uses the real threaded runner with committed rows.
-- Frontend: `SearchResults` holds the checkbox selection and the batch id, polls `GET /api/analysis-batches/{id}` every second until `done`, and patches each finished analysis into the cached search so the cards update live. When the batch is done it shows a summary toast and invalidates `article`, `history` and `stats`.
+- Frontend: `SearchResults` holds the checkbox selection and the batch id, polls `GET /api/analysis-batches/{id}` every second until `done`, and patches each finished analysis into the cached search so the cards update live. The batch id is also kept in the query cache (`['active-batch', searchId]`), so leaving the page mid-batch and coming back resumes the progress. When the batch is done it shows a summary toast, re-reads the search and invalidates `article`, `history` and `stats`. Failed items show their reason (`error_code`) on the card.
 
 ## Forgiving search (`services/query_fix.py`, `run_search` in `services/searches.py`)
 
@@ -108,6 +108,8 @@ Tests: the `db` fixture in `tests/conftest.py` wraps each test in a transaction 
 - **Toasts:** `const toast = useToast(); toast('Saved', 'success')` (from `lib/toast.ts`, provided by `components/ToastProvider.tsx`). They auto-dismiss after 4.5 s, show at most three at once, and are announced by screen readers.
 - **Status-aware API calls:** `apiRequest()` returns `{ data, status }`. `createSearch` returns `{ search, cached }` (200 = reused) and `analyzeArticle` returns `{ analysis, created }` (201 = new). The toasts use these.
 - **Keyboard:** `useKeyboardShortcuts({ onSlash, onEscape })` in `lib/shortcuts.ts`. It ignores keys while you're typing in a field.
+- **Article panel:** `ArticleDetail` takes `onClose` (a Close button, "Back to results" on phones). Below `lg` it renders after the list, so on mount it scrolls itself into view and takes focus; closing scrolls back to the card (found by `data-article-id`).
+- **Session expiry:** a 401 mid-session calls `noteSessionExpired()` (`lib/session.ts`, from `main.tsx`), so the sign-in page says the session expired; a deliberate Sign out doesn't.
 
 ## Adding an endpoint
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { ApiError, SESSION_KEY, api } from '../api/client.ts'
+import { clearSessionExpired, sessionExpired } from '../lib/session.ts'
 
 /** Shows the sign-in page until the user has a session (when the server requires one). */
 export function AuthGate({ children }: { children: ReactNode }) {
@@ -20,7 +21,10 @@ function SignInPage() {
   const [password, setPassword] = useState('')
   const login = useMutation({
     mutationFn: api.login,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: SESSION_KEY }),
+    onSuccess: () => {
+      clearSessionExpired()
+      return queryClient.invalidateQueries({ queryKey: SESSION_KEY })
+    },
   })
 
   const error =
@@ -41,7 +45,11 @@ function SignInPage() {
       >
         <div>
           <h1 className="text-xl font-semibold">News Analyser</h1>
-          <p className="mt-1 text-sm text-soft">Enter the access password to continue.</p>
+          <p className="mt-1 text-sm text-soft">
+            {sessionExpired()
+              ? 'Your session expired. Sign in again to continue.'
+              : 'Enter the access password to continue.'}
+          </p>
         </div>
         <input
           type="password"
@@ -51,7 +59,7 @@ function SignInPage() {
           placeholder="Password"
           autoComplete="current-password"
           autoFocus
-          className="w-full rounded-md border border-line-strong px-3 py-2 focus:border-muted focus:outline-none"
+          className="w-full rounded-md border border-line-strong px-3 py-2 focus:border-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
         {error && (
           <p role="alert" className="text-sm text-danger-fg">

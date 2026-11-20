@@ -21,6 +21,15 @@ type Props = {
   selection?: { checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }
   /** Progress in a running batch analysis. */
   batchStatus?: BatchItemStatus
+  /** Why the batch couldn't analyze this article (when batchStatus is 'failed'). */
+  batchError?: string | null
+}
+
+const BATCH_ERROR: Record<string, string> = {
+  ai_unavailable: 'AI unavailable',
+  ai_output_invalid: 'AI gave an unusable answer',
+  ai_not_configured: 'AI not set up',
+  interrupted: 'interrupted',
 }
 
 // 'done' and 'skipped' need no label: the sentiment badge appears instead.
@@ -37,6 +46,7 @@ export function ArticleCard({
   showSummary = false,
   selection,
   batchStatus,
+  batchError,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false)
   const showImage = article.image_url && !imageFailed
@@ -68,6 +78,7 @@ export function ArticleCard({
               type="checkbox"
               checked={selection.checked}
               disabled={selection.disabled}
+              title={selection.disabled ? 'Up to 10 articles per batch' : undefined}
               onChange={(e) => selection.onChange(e.target.checked)}
               aria-label={`Select for analysis: ${article.title}`}
               className="size-4 cursor-pointer accent-accent disabled:cursor-not-allowed"
@@ -98,6 +109,7 @@ export function ArticleCard({
               }
             >
               {BATCH_LABEL[batchStatus]}
+              {batchStatus === 'failed' && `: ${BATCH_ERROR[batchError ?? ''] ?? 'try again'}`}
             </span>
           )}
         </p>

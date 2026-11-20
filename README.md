@@ -75,6 +75,7 @@ Each item below has its own PR or commit, with a test where the bug could be rep
 
 - **Full article text:** a paid news plan, or a provider with a details endpoint, would let analyses read the whole article. `text_source` is already stored for that.
 - **Re-run and delete an analysis** (e.g. after a prompt change). Also: per-topic sentiment over time, and streaming the analysis as it's generated.
+- **An "Analyze" button on each result card** (today a single article is analyzed from its detail panel, several at once with the checkboxes), and **exporting** the history as CSV.
 - **A durable job queue** (RQ or Celery) for batch analysis, with retries for failed items and jobs that survive a restart.
 - **Top headlines** as the empty state of the search page.
 - **An end-to-end browser test** (Playwright, using the fake providers) of search → analyze → history in CI. Today the UI is checked by hand in a browser for each PR.

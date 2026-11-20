@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes } from 'react-router'
+import { Link, NavLink, Route, Routes } from 'react-router'
 import { ApiStatus } from './components/ApiStatus.tsx'
 import { SignOutButton } from './components/AuthGate.tsx'
 import { ThemeToggle } from './components/ThemeToggle.tsx'
@@ -36,8 +36,21 @@ export default function App() {
         <Routes>
           <Route path="/" element={<SearchPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+    </div>
+  )
+}
+
+function NotFound() {
+  return (
+    <div className="mx-auto max-w-md space-y-3 py-16 text-center">
+      <h1 className="text-2xl font-semibold">Page not found</h1>
+      <p className="text-soft">There's nothing at this address.</p>
+      <Link to="/" className="inline-block font-medium underline">
+        Go to Search
+      </Link>
     </div>
   )
 }

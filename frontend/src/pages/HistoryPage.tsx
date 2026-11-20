@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { api } from '../api/client.ts'
 import type { ArticleSort, HistoryFilters, Period, Sentiment } from '../api/types.ts'
 import { ArticleCard, ArticleCardSkeleton } from '../components/ArticleCard.tsx'
@@ -184,10 +184,16 @@ export function HistoryPage() {
           )}
         </div>
 
+        {(stats.isError || searches.isError) && (
+          <p className="text-xs text-danger-fg">
+            Couldn't load the filter options. Refresh to try again.
+          </p>
+        )}
         {stats.data && <StatsStrip stats={stats.data} />}
 
         {list.isPending ? (
-          <div className="space-y-3" aria-busy="true" aria-label="Loading history">
+          <div className="space-y-3" role="status" aria-busy="true">
+            <span className="sr-only">Loading history…</span>
             {Array.from({ length: 3 }, (_, i) => (
               <ArticleCardSkeleton key={i} />
             ))}
@@ -197,11 +203,25 @@ export function HistoryPage() {
             Couldn't load your history. Refresh to try again.
           </p>
         ) : list.data.items.length === 0 ? (
-          <p className="text-sm text-muted">
-            {filtered
-              ? 'No analyzed articles match these filters.'
-              : 'Nothing analyzed yet. Search for a topic and analyze an article to see it here.'}
-          </p>
+          page > 1 ? (
+            // e.g. an old link to a page that no longer exists after filtering.
+            <p className="text-sm text-muted">
+              There's nothing on page {page}.{' '}
+              <button type="button" onClick={() => update('page', null)} className="underline">
+                Go to the first page
+              </button>
+            </p>
+          ) : filtered ? (
+            <p className="text-sm text-muted">No analyzed articles match these filters.</p>
+          ) : (
+            <p className="text-sm text-muted">
+              Nothing analyzed yet.{' '}
+              <Link to="/" className="font-medium text-fg underline">
+                Search for a topic
+              </Link>{' '}
+              and analyze an article to see it here.
+            </p>
+          )
         ) : (
           <>
             <div className="space-y-3">

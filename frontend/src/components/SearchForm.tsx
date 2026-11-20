@@ -12,6 +12,8 @@ type Props = {
    * while the form is unedited: once the user changes anything it no longer describes what
    * they'd search, and its action would run the old search. */
   notice?: ReactNode
+  /** A search is running: block a second submit. */
+  pending?: boolean
 }
 
 const PERIODS: { value: Period | ''; label: string }[] = [
@@ -21,7 +23,7 @@ const PERIODS: { value: Period | ''; label: string }[] = [
   { value: '30d', label: 'Past month' },
 ]
 
-export function SearchForm({ initial, onSearch, correctedNoticeId, notice }: Props) {
+export function SearchForm({ initial, onSearch, correctedNoticeId, notice, pending = false }: Props) {
   const [q, setQ] = useState(initial.q)
   const [sort, setSort] = useState<SortOrder>(initial.sort)
   const [period, setPeriod] = useState<Period | ''>(initial.period ?? '')
@@ -38,7 +40,7 @@ export function SearchForm({ initial, onSearch, correctedNoticeId, notice }: Pro
         className="flex flex-wrap gap-2"
         onSubmit={(e) => {
           e.preventDefault()
-          if (trimmed) onSearch({ q: trimmed, sort, period: period || null })
+          if (trimmed && !pending) onSearch({ q: trimmed, sort, period: period || null })
         }}
       >
         <input
@@ -51,7 +53,7 @@ export function SearchForm({ initial, onSearch, correctedNoticeId, notice }: Pro
           aria-keyshortcuts="/"
           maxLength={200}
           aria-describedby={showingCorrection ? correctedNoticeId : undefined}
-          className={`min-w-64 flex-1 rounded-md border bg-surface px-3 py-2 focus:outline-none ${
+          className={`min-w-64 flex-1 rounded-md border bg-surface px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
             showingCorrection
               ? 'border-accent ring-1 ring-accent'
               : 'border-line-strong focus:border-muted'
@@ -80,10 +82,10 @@ export function SearchForm({ initial, onSearch, correctedNoticeId, notice }: Pro
         </select>
         <button
           type="submit"
-          disabled={!trimmed}
+          disabled={!trimmed || pending}
           className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg disabled:opacity-40"
         >
-          Search
+          {pending ? 'Searching…' : 'Search'}
         </button>
       </form>
       {!edited && notice}
